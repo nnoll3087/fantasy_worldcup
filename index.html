@@ -862,7 +862,7 @@ ALL_TEAMS[ALL_TEAMS.findIndex(t => t.name === "Portugal B")] = { name: "Bosnia",
 
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwgFTRe5ZBeLKlnQsyYUVGxS6Bv_bClJTtqC5kkXlW3ZtmUHWALBTJIfabGBtaDovZuLQ/exec";
+const SCRIPT_URL = "PASTE_YOUR_SCRIPT_URL_HERE";
 
 // ─── STATE ───────────────────────────────────────────────────────────────────
 
@@ -885,7 +885,7 @@ function setLoading(on) {
 async function loadState() {
   setLoading(true);
   try {
-    const res = await fetch(SCRIPT_URL);
+    const res = await fetch(SCRIPT_URL, { redirect: 'follow' });
     const json = await res.json();
     if (json.ok) {
       state = { ...state, ...json.data };
@@ -893,7 +893,8 @@ async function loadState() {
       toast("Could not load data from server");
     }
   } catch(e) {
-    toast("Network error — check your Script URL");
+    toast("Network error loading state — check Script URL");
+    console.error(e);
   }
   setLoading(false);
 }
@@ -905,6 +906,8 @@ async function api(action, payload) {
   try {
     const res = await fetch(SCRIPT_URL, {
       method: "POST",
+      redirect: 'follow',
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action, ...payload }),
     });
     const json = await res.json();
@@ -916,6 +919,7 @@ async function api(action, payload) {
     return json;
   } catch(e) {
     toast("Network error — could not save");
+    console.error(e);
     return null;
   } finally {
     saving = false;
