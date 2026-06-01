@@ -566,7 +566,17 @@
   }
   .empty-state .big { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; display: block; margin-bottom: 0.5rem; }
 
-  @media (max-width: 600px) {
+  .loading-bar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    background: var(--green);
+    width: 0%;
+    opacity: 0;
+    transition: width 0.3s ease, opacity 0.3s ease;
+    z-index: 1000;
+  }
+
     main { padding: 1rem; }
     header { padding: 1rem; }
     .tabs { padding: 0 1rem; }
@@ -578,6 +588,7 @@
 </head>
 <body>
 
+<div class="loading-bar" id="loading-bar"></div>
 <header>
   <div class="logo">
     <span class="logo-top">World Cup Fantasy</span>
@@ -849,18 +860,67 @@ const ALL_TEAMS = [
 // Fix duplicate — replace placeholder with real team
 ALL_TEAMS[ALL_TEAMS.findIndex(t => t.name === "Portugal B")] = { name: "Bosnia", flag: "🇧🇦", group: "L", rank: 57 };
 
+// ─── CONFIG ──────────────────────────────────────────────────────────────────
+
+const SCRIPT_URL = https://script.google.com/macros/s/AKfycbwgFTRe5ZBeLKlnQsyYUVGxS6Bv_bClJTtqC5kkXlW3ZtmUHWALBTJIfabGBtaDovZuLQ/exec;
+
 // ─── STATE ───────────────────────────────────────────────────────────────────
 
-let state = JSON.parse(localStorage.getItem("wcf2026") || "null") || {
+let state = {
   managers: ["", "", "", "", "", ""],
-  picks: {}, // managerName -> [teamNames]
+  picks: {},
   results: [],
   adminUnlocked: false,
   biggestUpsetUsed: false,
 };
 
-function save() {
-  localStorage.setItem("wcf2026", JSON.stringify(state));
+// Track in-flight requests to prevent double submits
+let saving = false;
+
+function setLoading(on) {
+  document.getElementById('loading-bar').style.width = on ? '100%' : '0%';
+  document.getElementById('loading-bar').style.opacity = on ? '1' : '0';
+}
+
+async function loadState() {
+  setLoading(true);
+  try {
+    const res = await fetch(SCRIPT_URL);
+    const json = await res.json();
+    if (json.ok) {
+      state = { ...state, ...json.data };
+    } else {
+      toast("Could not load data from server");
+    }
+  } catch(e) {
+    toast("Network error — check your Script URL");
+  }
+  setLoading(false);
+}
+
+async function api(action, payload) {
+  if (saving) return null;
+  saving = true;
+  setLoading(true);
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({ action, ...payload }),
+    });
+    const json = await res.json();
+    if (json.ok) {
+      state = { ...state, ...json.data };
+    } else {
+      toast(json.error || "Server error");
+    }
+    return json;
+  } catch(e) {
+    toast("Network error — could not save");
+    return null;
+  } finally {
+    saving = false;
+    setLoading(false);
+  }
 }
 
 // ─── TABS ─────────────────────────────────────────────────────────────────────
@@ -889,16 +949,16 @@ function renderSetup() {
   }
 }
 
-function saveManagers() {
+async function saveManagers() {
   const names = [];
   for (let i = 0; i < 6; i++) {
     names.push(document.getElementById(`mgr-${i}`).value.trim());
   }
-  state.managers = names;
-  // init picks
-  names.forEach(n => { if (n && !state.picks[n]) state.picks[n] = []; });
-  save();
-  toast("Managers saved!");
+  const res = await api("saveManagers", { managers: names });
+  if (res?.ok) {
+    toast("Managers saved!");
+    renderSetup();
+  }
 }
 
 // ─── SNAKE DRAFT ORDER ───────────────────────────────────────────────────────
@@ -1008,16 +1068,16 @@ function selectTeam(name) {
   document.getElementById('draft-team-select').value = name;
 }
 
-function makePick() {
+async function makePick() {
   const mgr = document.getElementById('draft-manager').value;
   const team = document.getElementById('draft-team-select').value;
   if (!mgr || !team) return toast("Select a manager and team");
   if (pickedTeams().includes(team)) return toast("Team already drafted");
-  if (!state.picks[mgr]) state.picks[mgr] = [];
-  state.picks[mgr].push(team);
-  save();
-  toast(`${mgr} drafts ${team}!`);
-  renderDraft();
+  const res = await api("makePick", { manager: mgr, team });
+  if (res?.ok) {
+    toast(`${mgr} drafts ${team}!`);
+    renderDraft();
+  }
 }
 
 // ─── LEADERBOARD ─────────────────────────────────────────────────────────────
@@ -1176,7 +1236,6 @@ function checkAdmin() {
     state.adminUnlocked = true;
     document.getElementById('admin-status').textContent = '✓ Unlocked';
     document.getElementById('results-form-area').style.display = 'block';
-    save();
   } else {
     toast("Wrong password");
   }
@@ -1208,7 +1267,7 @@ function populateAwardSelects() {
   if (gg) gg.innerHTML = opts;
 }
 
-function logResult() {
+async function logResult() {
   const team1 = document.getElementById('res-team1').value;
   const team2 = document.getElementById('res-team2').value;
   const stage = document.getElementById('res-stage').value;
@@ -1227,24 +1286,16 @@ function logResult() {
 
   if (team1 === team2) return toast("Teams must be different");
 
-  // Auto-detect upset
+  // Auto-detect upset: winner has HIGHER ranking number (worse team) beat LOWER (better team)
   let upset = false;
-  if (result === 'win' && rank1 && rank2 && (rank2 - rank1) >= 15) {
-    upset = true; // team1 (lower number = better) beat team2 that's 15+ spots worse? No — upset is when worse team wins
-  }
-  // Upset = winner has HIGHER ranking number (worse team) beats LOWER (better team)
-  if (result === 'win' && rank1 && rank2 && (rank1 - rank2) >= 15) {
-    upset = true; // team1 ranked worse by 15+ spots and won
-  }
+  if (result === 'win' && rank1 && rank2 && (rank1 - rank2) >= 15) upset = true;
 
-  if (biggestUpset && state.biggestUpsetUsed) return toast("Biggest Upset already awarded!");
-  if (biggestUpset) state.biggestUpsetUsed = true;
-
-  const entry = { team1, team2, stage, result, rank1, rank2, clean1, clean2, hattrick1, hattrick2, advance1, advance2, upset, biggestUpset, goldenBoot, goldenGlove, id: Date.now() };
-  state.results.push(entry);
-  save();
-  toast("Result logged!");
-  renderResultLog();
+  const entry = { team1, team2, stage, result, rank1, rank2, clean1, clean2, hattrick1, hattrick2, advance1, advance2, upset, biggestUpset, goldenBoot, goldenGlove };
+  const res = await api("logResult", { result: entry });
+  if (res?.ok) {
+    toast("Result logged!");
+    renderResultLog();
+  }
 }
 
 function renderResultLog() {
@@ -1274,11 +1325,12 @@ function renderResultLog() {
   }).join('');
 }
 
-function deleteResult(id) {
-  state.results = state.results.filter(r => r.id !== id);
-  save();
-  renderResultLog();
-  toast("Result removed");
+async function deleteResult(id) {
+  const res = await api("deleteResult", { id });
+  if (res?.ok) {
+    renderResultLog();
+    toast("Result removed");
+  }
 }
 
 // ─── UTILS ───────────────────────────────────────────────────────────────────
@@ -1292,11 +1344,16 @@ function toast(msg) {
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 
-renderSetup();
-renderDraft();
-populateResultTeams();
-populateAwardSelects();
-renderResultLog();
+async function init() {
+  await loadState();
+  renderSetup();
+  renderDraft();
+  populateResultTeams();
+  populateAwardSelects();
+  renderResultLog();
+}
+
+init();
 </script>
 </body>
 </html>
