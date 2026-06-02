@@ -606,6 +606,9 @@
   <div class="tab" onclick="showTab('leaderboard')">Leaderboard</div>
   <div class="tab" onclick="showTab('results')">Enter Results</div>
   <div class="tab" onclick="showTab('scoring')">Scoring</div>
+  <div class="tab" onclick="showTab('schedule')">Schedule</div>
+  <div class="tab" onclick="showTab('pastresults')">Past Results</div>
+  <div class="tab" onclick="showTab('teams')">Teams</div>
 </div>
 
 <main>
@@ -785,6 +788,46 @@
     </div>
   </div>
 
+
+  <!-- SCHEDULE -->
+  <div class="panel" id="panel-schedule">
+    <div class="section-title">Upcoming <span>Schedule</span></div>
+    <div class="schedule-filters">
+      <div class="group-btn active" onclick="setScheduleFilter('all', this)">All</div>
+      <div class="group-btn" onclick="setScheduleFilter('mine', this)">My Teams</div>
+      <div class="group-btn" onclick="setScheduleFilter('group', this)">Group Stage</div>
+      <div class="group-btn" onclick="setScheduleFilter('knockout', this)">Knockout</div>
+    </div>
+    <div id="schedule-list"></div>
+  </div>
+
+  <!-- PAST RESULTS -->
+  <div class="panel" id="panel-pastresults">
+    <div class="section-title">Past <span>Results</span></div>
+    <div id="past-results-list"></div>
+  </div>
+
+  <!-- TEAMS -->
+  <div class="panel" id="panel-teams">
+    <div class="section-title">Team <span>Breakdown</span></div>
+    <div class="schedule-filters" style="margin-bottom:1rem;">
+      <div class="group-btn active" onclick="setTeamsFilter('all', this)">All Groups</div>
+      <div class="group-btn" onclick="setTeamsFilter('A', this)">A</div>
+      <div class="group-btn" onclick="setTeamsFilter('B', this)">B</div>
+      <div class="group-btn" onclick="setTeamsFilter('C', this)">C</div>
+      <div class="group-btn" onclick="setTeamsFilter('D', this)">D</div>
+      <div class="group-btn" onclick="setTeamsFilter('E', this)">E</div>
+      <div class="group-btn" onclick="setTeamsFilter('F', this)">F</div>
+      <div class="group-btn" onclick="setTeamsFilter('G', this)">G</div>
+      <div class="group-btn" onclick="setTeamsFilter('H', this)">H</div>
+      <div class="group-btn" onclick="setTeamsFilter('I', this)">I</div>
+      <div class="group-btn" onclick="setTeamsFilter('J', this)">J</div>
+      <div class="group-btn" onclick="setTeamsFilter('K', this)">K</div>
+      <div class="group-btn" onclick="setTeamsFilter('L', this)">L</div>
+    </div>
+    <div id="teams-breakdown-list"></div>
+  </div>
+
 </main>
 
 <div class="toast" id="toast"></div>
@@ -796,69 +839,66 @@ const ADMIN_PASSWORD = "wcfantasy2026";
 
 const ALL_TEAMS = [
   // Group A
-  { name: "USA", flag: "🇺🇸", group: "A", rank: 11 },
-  { name: "Panama", flag: "🇵🇦", group: "A", rank: 43 },
-  { name: "Bolivia", flag: "🇧🇴", group: "A", rank: 85 },
-  { name: "New Zealand", flag: "🇳🇿", group: "A", rank: 97 },
+  { name: "Mexico", flag: "🇲🇽", group: "A", rank: 15 },
+  { name: "South Africa", flag: "🇿🇦", group: "A", rank: 60 },
+  { name: "Korea Republic", flag: "🇰🇷", group: "A", rank: 25 },
+  { name: "Czechia", flag: "🇨🇿", group: "A", rank: 41 },
   // Group B
-  { name: "Argentina", flag: "🇦🇷", group: "B", rank: 1 },
-  { name: "Chile", flag: "🇨🇱", group: "B", rank: 33 },
-  { name: "Albania", flag: "🇦🇱", group: "B", rank: 66 },
-  { name: "Ukraine", flag: "🇺🇦", group: "B", rank: 22 },
+  { name: "Canada", flag: "🇨🇦", group: "B", rank: 30 },
+  { name: "Bosnia", flag: "🇧🇦", group: "B", rank: 65 },
+  { name: "Qatar", flag: "🇶🇦", group: "B", rank: 55 },
+  { name: "Switzerland", flag: "🇨🇭", group: "B", rank: 19 },
   // Group C
-  { name: "Mexico", flag: "🇲🇽", group: "C", rank: 15 },
-  { name: "South Africa", flag: "🇿🇦", group: "C", rank: 59 },
-  { name: "Iraq", flag: "🇮🇶", group: "C", rank: 63 },
-  { name: "Sweden", flag: "🇸🇪", group: "C", rank: 25 },
+  { name: "Brazil", flag: "🇧🇷", group: "C", rank: 6 },
+  { name: "Morocco", flag: "🇲🇦", group: "C", rank: 8 },
+  { name: "Haiti", flag: "🇭🇹", group: "C", rank: 83 },
+  { name: "Scotland", flag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿", group: "C", rank: 43 },
   // Group D
-  { name: "France", flag: "🇫🇷", group: "D", rank: 2 },
-  { name: "Belgium", flag: "🇧🇪", group: "D", rank: 3 },
-  { name: "Paraguay", flag: "🇵🇾", group: "D", rank: 68 },
-  { name: "Uzbekistan", flag: "🇺🇿", group: "D", rank: 74 },
+  { name: "USA", flag: "🇺🇸", group: "D", rank: 16 },
+  { name: "Paraguay", flag: "🇵🇾", group: "D", rank: 40 },
+  { name: "Australia", flag: "🇦🇺", group: "D", rank: 27 },
+  { name: "Turkiye", flag: "🇹🇷", group: "D", rank: 22 },
   // Group E
-  { name: "Spain", flag: "🇪🇸", group: "E", rank: 4 },
-  { name: "Croatia", flag: "🇭🇷", group: "E", rank: 10 },
-  { name: "Egypt", flag: "🇪🇬", group: "E", rank: 37 },
-  { name: "Curacao", flag: "🇨🇼", group: "E", rank: 92 },
+  { name: "Germany", flag: "🇩🇪", group: "E", rank: 10 },
+  { name: "Curacao", flag: "🇨🇼", group: "E", rank: 82 },
+  { name: "Ivory Coast", flag: "🇨🇮", group: "E", rank: 34 },
+  { name: "Ecuador", flag: "🇪🇨", group: "E", rank: 24 },
   // Group F
-  { name: "England", flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", group: "F", rank: 5 },
-  { name: "Senegal", flag: "🇸🇳", group: "F", rank: 18 },
-  { name: "Tunisia", flag: "🇹🇳", group: "F", rank: 32 },
-  { name: "Georgia", flag: "🇬🇪", group: "F", rank: 55 },
+  { name: "Netherlands", flag: "🇳🇱", group: "F", rank: 7 },
+  { name: "Japan", flag: "🇯🇵", group: "F", rank: 18 },
+  { name: "Sweden", flag: "🇸🇪", group: "F", rank: 38 },
+  { name: "Tunisia", flag: "🇹🇳", group: "F", rank: 45 },
   // Group G
-  { name: "Brazil", flag: "🇧🇷", group: "G", rank: 6 },
-  { name: "Germany", flag: "🇩🇪", group: "G", rank: 12 },
-  { name: "Australia", flag: "🇦🇺", group: "G", rank: 23 },
-  { name: "Turkiye", flag: "🇹🇷", group: "G", rank: 29 },
+  { name: "Belgium", flag: "🇧🇪", group: "G", rank: 9 },
+  { name: "Egypt", flag: "🇪🇬", group: "G", rank: 28 },
+  { name: "IR Iran", flag: "🇮🇷", group: "G", rank: 21 },
+  { name: "New Zealand", flag: "🇳🇿", group: "G", rank: 85 },
   // Group H
-  { name: "Portugal", flag: "🇵🇹", group: "H", rank: 7 },
-  { name: "DR Congo", flag: "🇨🇩", group: "H", rank: 51 },
-  { name: "Austria", flag: "🇦🇹", group: "H", rank: 26 },
-  { name: "Jordan", flag: "🇯🇴", group: "H", rank: 80 },
+  { name: "Spain", flag: "🇪🇸", group: "H", rank: 2 },
+  { name: "Cabo Verde", flag: "🇨🇻", group: "H", rank: 68 },
+  { name: "Saudi Arabia", flag: "🇸🇦", group: "H", rank: 61 },
+  { name: "Uruguay", flag: "🇺🇾", group: "H", rank: 17 },
   // Group I
-  { name: "Netherlands", flag: "🇳🇱", group: "I", rank: 8 },
-  { name: "Nigeria", flag: "🇳🇬", group: "I", rank: 35 },
-  { name: "Cape Verde", flag: "🇨🇻", group: "I", rank: 70 },
-  { name: "Qatar", flag: "🇶🇦", group: "I", rank: 58 },
+  { name: "France", flag: "🇫🇷", group: "I", rank: 1 },
+  { name: "Senegal", flag: "🇸🇳", group: "I", rank: 14 },
+  { name: "Iraq", flag: "🇮🇶", group: "I", rank: 57 },
+  { name: "Norway", flag: "🇳🇴", group: "I", rank: 31 },
   // Group J
-  { name: "Morocco", flag: "🇲🇦", group: "J", rank: 14 },
-  { name: "Colombia", flag: "🇨🇴", group: "J", rank: 20 },
-  { name: "Iran", flag: "🇮🇷", group: "J", rank: 21 },
-  { name: "Ecuador", flag: "🇪🇨", group: "J", rank: 44 },
+  { name: "Argentina", flag: "🇦🇷", group: "J", rank: 3 },
+  { name: "Algeria", flag: "🇩🇿", group: "J", rank: 29 },
+  { name: "Austria", flag: "🇦🇹", group: "J", rank: 23 },
+  { name: "Jordan", flag: "🇯🇴", group: "J", rank: 63 },
   // Group K
-  { name: "Japan", flag: "🇯🇵", group: "K", rank: 16 },
-  { name: "South Korea", flag: "🇰🇷", group: "K", rank: 24 },
-  { name: "Ivory Coast", flag: "🇨🇮", group: "K", rank: 40 },
-  { name: "Venezuela", flag: "🇻🇪", group: "K", rank: 72 },
+  { name: "Portugal", flag: "🇵🇹", group: "K", rank: 5 },
+  { name: "Congo DR", flag: "🇨🇩", group: "K", rank: 46 },
+  { name: "Uzbekistan", flag: "🇺🇿", group: "K", rank: 50 },
+  { name: "Colombia", flag: "🇨🇴", group: "K", rank: 13 },
   // Group L
-  { name: "Portugal B", flag: "🇵🇹", group: "L", rank: 99 }, // placeholder — swap if needed
-  { name: "Canada", flag: "🇨🇦", group: "L", rank: 41 },
-  { name: "Switzerland", flag: "🇨🇭", group: "L", rank: 19 },
-  { name: "Uruguay", flag: "🇺🇾", group: "L", rank: 17 },
+  { name: "England", flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", group: "L", rank: 4 },
+  { name: "Croatia", flag: "🇭🇷", group: "L", rank: 11 },
+  { name: "Ghana", flag: "🇬🇭", group: "L", rank: 74 },
+  { name: "Panama", flag: "🇵🇦", group: "L", rank: 33 },
 ];
-
-// Fix duplicate — replace placeholder with real team
-ALL_TEAMS[ALL_TEAMS.findIndex(t => t.name === "Portugal B")] = { name: "Bosnia", flag: "🇧🇦", group: "L", rank: 57 };
 
 // ─── STATE ───────────────────────────────────────────────────────────────────
 
@@ -932,6 +972,9 @@ function showTab(id) {
   if (id === 'draft') renderDraft();
   if (id === 'leaderboard') renderLeaderboard();
   if (id === 'results') renderResultsPanel();
+  if (id === 'schedule') renderSchedule();
+  if (id === 'pastresults') renderPastResults();
+  if (id === 'teams') renderTeamsBreakdown();
 }
 
 // ─── SETUP ───────────────────────────────────────────────────────────────────
@@ -1339,6 +1382,384 @@ function toast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+
+// ─── SCHEDULE DATA ────────────────────────────────────────────────────────────
+// Group stage: all 48 games hardcoded. Times are ET.
+const GROUP_SCHEDULE = [
+  // Group A — Jun 11, 18, 24
+  {date:"2026-06-11",time:"TBD",home:"Mexico",away:"South Africa",venue:"Mexico City Stadium",stage:"group"},
+  {date:"2026-06-11",time:"TBD",home:"Korea Republic",away:"Czechia",venue:"Estadio Guadalajara",stage:"group"},
+  {date:"2026-06-18",time:"TBD",home:"Czechia",away:"South Africa",venue:"Atlanta Stadium",stage:"group"},
+  {date:"2026-06-18",time:"TBD",home:"Mexico",away:"Korea Republic",venue:"Estadio Guadalajara",stage:"group"},
+  {date:"2026-06-24",time:"TBD",home:"Czechia",away:"Mexico",venue:"Mexico City Stadium",stage:"group"},
+  {date:"2026-06-24",time:"TBD",home:"South Africa",away:"Korea Republic",venue:"Estadio Monterrey",stage:"group"},
+  // Group B
+  {date:"2026-06-12",time:"TBD",home:"Canada",away:"Bosnia",venue:"Toronto Stadium",stage:"group"},
+  {date:"2026-06-13",time:"TBD",home:"Qatar",away:"Switzerland",venue:"San Francisco Bay Area Stadium",stage:"group"},
+  {date:"2026-06-18",time:"TBD",home:"Switzerland",away:"Bosnia",venue:"Los Angeles Stadium",stage:"group"},
+  {date:"2026-06-18",time:"TBD",home:"Canada",away:"Qatar",venue:"BC Place Vancouver",stage:"group"},
+  {date:"2026-06-24",time:"TBD",home:"Switzerland",away:"Canada",venue:"BC Place Vancouver",stage:"group"},
+  {date:"2026-06-24",time:"TBD",home:"Bosnia",away:"Qatar",venue:"Seattle Stadium",stage:"group"},
+  // Group C
+  {date:"2026-06-13",time:"TBD",home:"Brazil",away:"Morocco",venue:"New York New Jersey Stadium",stage:"group"},
+  {date:"2026-06-13",time:"TBD",home:"Haiti",away:"Scotland",venue:"Boston Stadium",stage:"group"},
+  {date:"2026-06-19",time:"TBD",home:"Brazil",away:"Haiti",venue:"Philadelphia Stadium",stage:"group"},
+  {date:"2026-06-19",time:"TBD",home:"Scotland",away:"Morocco",venue:"Boston Stadium",stage:"group"},
+  {date:"2026-06-24",time:"TBD",home:"Scotland",away:"Brazil",venue:"Miami Stadium",stage:"group"},
+  {date:"2026-06-24",time:"TBD",home:"Morocco",away:"Haiti",venue:"Atlanta Stadium",stage:"group"},
+  // Group D
+  {date:"2026-06-12",time:"TBD",home:"USA",away:"Paraguay",venue:"Los Angeles Stadium",stage:"group"},
+  {date:"2026-06-13",time:"TBD",home:"Australia",away:"Turkiye",venue:"BC Place Vancouver",stage:"group"},
+  {date:"2026-06-19",time:"TBD",home:"Turkiye",away:"Paraguay",venue:"San Francisco Bay Area Stadium",stage:"group"},
+  {date:"2026-06-19",time:"TBD",home:"USA",away:"Australia",venue:"Seattle Stadium",stage:"group"},
+  {date:"2026-06-25",time:"TBD",home:"Turkiye",away:"USA",venue:"Los Angeles Stadium",stage:"group"},
+  {date:"2026-06-25",time:"TBD",home:"Paraguay",away:"Australia",venue:"San Francisco Bay Area Stadium",stage:"group"},
+  // Group E
+  {date:"2026-06-14",time:"TBD",home:"Germany",away:"Curacao",venue:"Houston Stadium",stage:"group"},
+  {date:"2026-06-14",time:"TBD",home:"Ivory Coast",away:"Ecuador",venue:"Philadelphia Stadium",stage:"group"},
+  {date:"2026-06-20",time:"TBD",home:"Germany",away:"Ivory Coast",venue:"Toronto Stadium",stage:"group"},
+  {date:"2026-06-20",time:"TBD",home:"Ecuador",away:"Curacao",venue:"Kansas City Stadium",stage:"group"},
+  {date:"2026-06-25",time:"TBD",home:"Curacao",away:"Ivory Coast",venue:"Philadelphia Stadium",stage:"group"},
+  {date:"2026-06-25",time:"TBD",home:"Ecuador",away:"Germany",venue:"New York New Jersey Stadium",stage:"group"},
+  // Group F
+  {date:"2026-06-14",time:"TBD",home:"Netherlands",away:"Japan",venue:"Dallas Stadium",stage:"group"},
+  {date:"2026-06-14",time:"TBD",home:"Sweden",away:"Tunisia",venue:"Estadio Monterrey",stage:"group"},
+  {date:"2026-06-20",time:"TBD",home:"Netherlands",away:"Sweden",venue:"Houston Stadium",stage:"group"},
+  {date:"2026-06-20",time:"TBD",home:"Tunisia",away:"Japan",venue:"Estadio Monterrey",stage:"group"},
+  {date:"2026-06-25",time:"TBD",home:"Japan",away:"Sweden",venue:"Dallas Stadium",stage:"group"},
+  {date:"2026-06-25",time:"TBD",home:"Tunisia",away:"Netherlands",venue:"Kansas City Stadium",stage:"group"},
+  // Group G
+  {date:"2026-06-15",time:"TBD",home:"Belgium",away:"Egypt",venue:"Seattle Stadium",stage:"group"},
+  {date:"2026-06-15",time:"TBD",home:"IR Iran",away:"New Zealand",venue:"Los Angeles Stadium",stage:"group"},
+  {date:"2026-06-21",time:"TBD",home:"Belgium",away:"IR Iran",venue:"Los Angeles Stadium",stage:"group"},
+  {date:"2026-06-21",time:"TBD",home:"New Zealand",away:"Egypt",venue:"BC Place Vancouver",stage:"group"},
+  {date:"2026-06-26",time:"TBD",home:"Egypt",away:"IR Iran",venue:"Seattle Stadium",stage:"group"},
+  {date:"2026-06-26",time:"TBD",home:"New Zealand",away:"Belgium",venue:"BC Place Vancouver",stage:"group"},
+  // Group H
+  {date:"2026-06-15",time:"TBD",home:"Saudi Arabia",away:"Uruguay",venue:"Miami Stadium",stage:"group"},
+  {date:"2026-06-15",time:"TBD",home:"Spain",away:"Cabo Verde",venue:"Atlanta Stadium",stage:"group"},
+  {date:"2026-06-21",time:"TBD",home:"Uruguay",away:"Cabo Verde",venue:"Miami Stadium",stage:"group"},
+  {date:"2026-06-21",time:"TBD",home:"Spain",away:"Saudi Arabia",venue:"Atlanta Stadium",stage:"group"},
+  {date:"2026-06-26",time:"TBD",home:"Cabo Verde",away:"Saudi Arabia",venue:"Houston Stadium",stage:"group"},
+  {date:"2026-06-26",time:"TBD",home:"Uruguay",away:"Spain",venue:"Estadio Guadalajara",stage:"group"},
+  // Group I
+  {date:"2026-06-16",time:"TBD",home:"France",away:"Senegal",venue:"New York New Jersey Stadium",stage:"group"},
+  {date:"2026-06-16",time:"TBD",home:"Iraq",away:"Norway",venue:"Boston Stadium",stage:"group"},
+  {date:"2026-06-22",time:"TBD",home:"Norway",away:"Senegal",venue:"New York New Jersey Stadium",stage:"group"},
+  {date:"2026-06-22",time:"TBD",home:"France",away:"Iraq",venue:"Philadelphia Stadium",stage:"group"},
+  {date:"2026-06-26",time:"TBD",home:"Norway",away:"France",venue:"Boston Stadium",stage:"group"},
+  {date:"2026-06-26",time:"TBD",home:"Senegal",away:"Iraq",venue:"Toronto Stadium",stage:"group"},
+  // Group J
+  {date:"2026-06-16",time:"TBD",home:"Argentina",away:"Algeria",venue:"Kansas City Stadium",stage:"group"},
+  {date:"2026-06-16",time:"TBD",home:"Austria",away:"Jordan",venue:"San Francisco Bay Area Stadium",stage:"group"},
+  {date:"2026-06-22",time:"TBD",home:"Argentina",away:"Austria",venue:"Dallas Stadium",stage:"group"},
+  {date:"2026-06-22",time:"TBD",home:"Jordan",away:"Algeria",venue:"San Francisco Bay Area Stadium",stage:"group"},
+  {date:"2026-06-27",time:"TBD",home:"Algeria",away:"Austria",venue:"Kansas City Stadium",stage:"group"},
+  {date:"2026-06-27",time:"TBD",home:"Jordan",away:"Argentina",venue:"Dallas Stadium",stage:"group"},
+  // Group K
+  {date:"2026-06-17",time:"TBD",home:"Portugal",away:"Congo DR",venue:"Houston Stadium",stage:"group"},
+  {date:"2026-06-17",time:"TBD",home:"Uzbekistan",away:"Colombia",venue:"Mexico City Stadium",stage:"group"},
+  {date:"2026-06-23",time:"TBD",home:"Portugal",away:"Uzbekistan",venue:"Houston Stadium",stage:"group"},
+  {date:"2026-06-23",time:"TBD",home:"Colombia",away:"Congo DR",venue:"Estadio Guadalajara",stage:"group"},
+  {date:"2026-06-27",time:"TBD",home:"Colombia",away:"Portugal",venue:"Miami Stadium",stage:"group"},
+  {date:"2026-06-27",time:"TBD",home:"Congo DR",away:"Uzbekistan",venue:"Atlanta Stadium",stage:"group"},
+  // Group L
+  {date:"2026-06-17",time:"TBD",home:"Ghana",away:"Panama",venue:"Toronto Stadium",stage:"group"},
+  {date:"2026-06-17",time:"TBD",home:"England",away:"Croatia",venue:"Dallas Stadium",stage:"group"},
+  {date:"2026-06-23",time:"TBD",home:"England",away:"Ghana",venue:"Boston Stadium",stage:"group"},
+  {date:"2026-06-23",time:"TBD",home:"Panama",away:"Croatia",venue:"Toronto Stadium",stage:"group"},
+  {date:"2026-06-27",time:"TBD",home:"Panama",away:"England",venue:"New York New Jersey Stadium",stage:"group"},
+  {date:"2026-06-27",time:"TBD",home:"Croatia",away:"Ghana",venue:"Philadelphia Stadium",stage:"group"},
+];
+
+// Knockout placeholders — teams TBD after group stage
+const KNOCKOUT_SCHEDULE = [
+  {date:"2026-06-29",time:"TBD",home:"TBD",away:"TBD",venue:"TBD",stage:"r32",label:"R32 Game 1"},
+  {date:"2026-06-30",time:"TBD",home:"TBD",away:"TBD",venue:"TBD",stage:"r32",label:"R32 Game 2"},
+  {date:"2026-07-01",time:"TBD",home:"TBD",away:"TBD",venue:"TBD",stage:"r32",label:"R32 Game 3"},
+  {date:"2026-07-02",time:"TBD",home:"TBD",away:"TBD",venue:"TBD",stage:"r32",label:"R32 Game 4"},
+  {date:"2026-07-03",time:"TBD",home:"TBD",away:"TBD",venue:"TBD",stage:"r32",label:"R32 Game 5"},
+  {date:"2026-07-04",time:"TBD",home:"TBD",away:"TBD",venue:"TBD",stage:"r32",label:"R32 Game 6"},
+  {date:"2026-07-05",time:"TBD",home:"TBD",away:"TBD",venue:"TBD",stage:"r32",label:"R32 Game 7"},
+  {date:"2026-07-06",time:"TBD",home:"TBD",away:"TBD",venue:"TBD",stage:"r32",label:"R32 Game 8"},
+  {date:"2026-07-08",time:"TBD",home:"TBD",away:"TBD",venue:"TBD",stage:"r16",label:"R16 Game 1"},
+  {date:"2026-07-09",time:"TBD",home:"TBD",away:"TBD",venue:"TBD",stage:"r16",label:"R16 Game 2"},
+  {date:"2026-07-10",time:"TBD",home:"TBD",away:"TBD",venue:"TBD",stage:"r16",label:"R16 Game 3"},
+  {date:"2026-07-11",time:"TBD",home:"TBD",away:"TBD",venue:"TBD",stage:"r16",label:"R16 Game 4"},
+  {date:"2026-07-12",time:"TBD",home:"TBD",away:"TBD",venue:"TBD",stage:"qf",label:"Quarterfinal 1"},
+  {date:"2026-07-13",time:"TBD",home:"TBD",away:"TBD",venue:"TBD",stage:"qf",label:"Quarterfinal 2"},
+  {date:"2026-07-14",time:"TBD",home:"TBD",away:"TBD",venue:"TBD",stage:"qf",label:"Quarterfinal 3"},
+  {date:"2026-07-15",time:"TBD",home:"TBD",away:"TBD",venue:"TBD",stage:"qf",label:"Quarterfinal 4"},
+  {date:"2026-07-17",time:"TBD",home:"TBD",away:"TBD",venue:"TBD",stage:"sf",label:"Semifinal 1"},
+  {date:"2026-07-18",time:"TBD",home:"TBD",away:"TBD",venue:"TBD",stage:"sf",label:"Semifinal 2"},
+  {date:"2026-07-19",time:"TBD",home:"TBD",away:"TBD",venue:"TBD",stage:"final",label:"World Cup Final"},
+];
+
+const ALL_SCHEDULE = [...GROUP_SCHEDULE, ...KNOCKOUT_SCHEDULE];
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+
+function getManagerForTeam(teamName) {
+  for (const [mgr, teams] of Object.entries(state.picks)) {
+    if (teams.includes(teamName)) return mgr;
+  }
+  return null;
+}
+
+function getRankForTeam(teamName) {
+  const t = ALL_TEAMS.find(x => x.name === teamName);
+  return t ? t.rank : null;
+}
+
+function pointsAtStake(stage) {
+  const map = { group: 2, r32: 4, r16: 5, qf: 7, sf: 10, final: 20 };
+  return map[stage] || 0;
+}
+
+function stageName(stage) {
+  const map = { group:'Group Stage', r32:'Round of 32', r16:'Round of 16', qf:'Quarterfinal', sf:'Semifinal', final:'Final' };
+  return map[stage] || stage;
+}
+
+function isUpcomingGame(game) {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const gd = new Date(game.date + 'T00:00:00');
+  return gd >= today;
+}
+
+function isPlayedGame(game) {
+  return state.results.some(r =>
+    (r.team1 === game.home && r.team2 === game.away) ||
+    (r.team1 === game.away && r.team2 === game.home)
+  );
+}
+
+function formatGameDate(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  return {
+    day: d.getDate(),
+    month: d.toLocaleString('default', { month: 'short' }).toUpperCase(),
+    weekday: d.toLocaleString('default', { weekday: 'short' }).toUpperCase(),
+  };
+}
+
+// ─── SCHEDULE TAB ─────────────────────────────────────────────────────────────
+
+let scheduleFilter = 'all';
+
+function setScheduleFilter(f, el) {
+  scheduleFilter = f;
+  document.querySelectorAll('.schedule-filters .group-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderSchedule();
+}
+
+function renderSchedule() {
+  const container = document.getElementById('schedule-list');
+  if (!container) return;
+
+  const upcoming = ALL_SCHEDULE.filter(g => !isPlayedGame(g) && isUpcomingGame(g));
+
+  let filtered = upcoming;
+  if (scheduleFilter === 'mine') {
+    filtered = upcoming.filter(g => getManagerForTeam(g.home) || getManagerForTeam(g.away));
+  } else if (scheduleFilter === 'group') {
+    filtered = upcoming.filter(g => g.stage === 'group');
+  } else if (scheduleFilter === 'knockout') {
+    filtered = upcoming.filter(g => g.stage !== 'group');
+  }
+
+  if (!filtered.length) {
+    container.innerHTML = '<div class="empty-state"><span class="big">All Caught Up</span>No upcoming games match this filter</div>';
+    return;
+  }
+
+  container.innerHTML = filtered.map(g => {
+    const homeMgr = getManagerForTeam(g.home);
+    const awayMgr = getManagerForTeam(g.away);
+    const homeRank = getRankForTeam(g.home);
+    const awayRank = getRankForTeam(g.away);
+    const pts = pointsAtStake(g.stage);
+    const hasMgr = homeMgr || awayMgr;
+    const upsetAlert = homeRank && awayRank && Math.abs(homeRank - awayRank) >= 15;
+    const dateInfo = formatGameDate(g.date);
+    const homeFlag = ALL_TEAMS.find(t => t.name === g.home)?.flag || '';
+    const awayFlag = ALL_TEAMS.find(t => t.name === g.away)?.flag || '';
+
+    return `<div class="schedule-card ${hasMgr ? 'has-managed' : ''} ${upsetAlert ? 'upset-alert' : ''}">
+      <div class="schedule-date">
+        <div class="day">${dateInfo.day}</div>
+        <div class="month">${dateInfo.month}</div>
+        <div class="time">${g.time !== 'TBD' ? g.time : 'TBD'}</div>
+      </div>
+      <div class="schedule-matchup">
+        <div class="stage-tag">${stageName(g.stage)}</div>
+        <div class="teams">
+          ${homeFlag} ${g.home} ${upsetAlert ? `<span class="upset-badge">⚡ Upset Alert</span>` : ''}<br>
+          ${awayFlag} ${g.away}
+        </div>
+        <div class="venue">${g.venue !== 'TBD' ? g.venue : 'Venue TBD'}</div>
+      </div>
+      <div class="schedule-managers">
+        <div class="mgr-row"><div class="mgr-dot ${homeMgr ? '' : 'unowned'}"></div>${homeMgr ? homeMgr : '<span style="color:var(--muted)">Unowned</span>'}</div>
+        <div class="mgr-row"><div class="mgr-dot ${awayMgr ? '' : 'unowned'}"></div>${awayMgr ? awayMgr : '<span style="color:var(--muted)">Unowned</span>'}</div>
+      </div>
+      <div class="schedule-pts">
+        <div class="pts-val">+${pts}</div>
+        <div class="pts-label">pts to win</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── PAST RESULTS TAB ────────────────────────────────────────────────────────
+
+function renderPastResults() {
+  const container = document.getElementById('past-results-list');
+  if (!container) return;
+
+  if (!state.results.length) {
+    container.innerHTML = '<div class="empty-state"><span class="big">No Results Yet</span>Log games in the Enter Results tab</div>';
+    return;
+  }
+
+  container.innerHTML = [...state.results].reverse().map(r => {
+    const stageLabel = stageName(r.stage);
+    const homeFlag = ALL_TEAMS.find(t => t.name === r.team1)?.flag || '';
+    const awayFlag = ALL_TEAMS.find(t => t.name === r.team2)?.flag || '';
+    const homeMgr = getManagerForTeam(r.team1);
+    const awayMgr = getManagerForTeam(r.team2);
+
+    // Calculate what each team earned from this result
+    function teamPtsFromResult(teamName, isTeam1) {
+      let pts = 0;
+      const detail = [];
+      // Survival
+      pts += 1; detail.push('Survival +1');
+      // Win/Draw
+      if (r.result === 'win' && isTeam1) {
+        const sp = pointsAtStake(r.stage);
+        pts += sp; detail.push(`Win +${sp}`);
+        if (r.stage === 'final') { /* winner */ }
+      }
+      if (r.result === 'win' && !isTeam1 && r.stage === 'final') {
+        pts += 13; detail.push('Runner-up +13');
+      }
+      if (r.result === 'draw') { pts += 1; detail.push('Draw +1'); }
+      // Advance
+      if (isTeam1 && r.advance1) { pts += 3; detail.push('Advance +3'); }
+      if (!isTeam1 && r.advance2) { pts += 3; detail.push('Advance +3'); }
+      // Clean sheet
+      if (isTeam1 && r.clean1) { pts += 1; detail.push('Clean Sheet +1'); }
+      if (!isTeam1 && r.clean2) { pts += 1; detail.push('Clean Sheet +1'); }
+      // Hat trick
+      if (isTeam1 && r.hattrick1) { pts += 3; detail.push('Hat Trick +3'); }
+      if (!isTeam1 && r.hattrick2) { pts += 3; detail.push('Hat Trick +3'); }
+      // Upset
+      if (isTeam1 && r.upset && r.result === 'win') { pts += 3; detail.push('Upset +3'); }
+      if (isTeam1 && r.biggestUpset && r.result === 'win') { pts += 5; detail.push('Biggest Upset +5'); }
+      // Awards
+      if (r.goldenBoot === teamName) { pts += 10; detail.push('Golden Boot +10'); }
+      if (r.goldenGlove === teamName) { pts += 5; detail.push('Golden Glove +5'); }
+      return { pts, detail };
+    }
+
+    const h = teamPtsFromResult(r.team1, true);
+    const a = teamPtsFromResult(r.team2, false);
+
+    return `<div class="past-result-card">
+      <div class="past-result-header">
+        <div class="past-result-match">${homeFlag} ${r.team1} ${r.result === 'win' ? 'def.' : 'drew'} ${awayFlag} ${r.team2}</div>
+        <div class="past-result-stage">${stageLabel}</div>
+      </div>
+      <div class="past-result-pts-rows">
+        <div class="past-result-pts-row">
+          <div class="pr-team">${homeFlag} ${r.team1}</div>
+          <div class="pr-mgr">${homeMgr || 'Unowned'}</div>
+          <div class="pr-breakdown">${h.detail.join(' · ')}</div>
+          <div class="pr-pts">+${h.pts}</div>
+        </div>
+        <div class="past-result-pts-row">
+          <div class="pr-team">${awayFlag} ${r.team2}</div>
+          <div class="pr-mgr">${awayMgr || 'Unowned'}</div>
+          <div class="pr-breakdown">${a.detail.join(' · ')}</div>
+          <div class="pr-pts">+${a.pts}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── TEAMS BREAKDOWN TAB ──────────────────────────────────────────────────────
+
+let teamsGroupFilter = 'all';
+
+function setTeamsFilter(f, el) {
+  teamsGroupFilter = f;
+  document.querySelectorAll('#panel-teams .group-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderTeamsBreakdown();
+}
+
+function calcTeamPoints(teamName) {
+  let pts = 0;
+  const detail = [];
+  state.results.forEach(r => {
+    const isT1 = r.team1 === teamName;
+    const isT2 = r.team2 === teamName;
+    if (!isT1 && !isT2) return;
+    pts += 1; detail.push('Survival +1');
+    if (r.result === 'win' && isT1) {
+      const sp = pointsAtStake(r.stage);
+      pts += sp; detail.push(`Win +${sp}`);
+    }
+    if (r.result === 'win' && isT2 && r.stage === 'final') {
+      pts += 13; detail.push('Runner-up +13');
+    }
+    if (r.result === 'draw') { pts += 1; detail.push('Draw +1'); }
+    if (isT1 && r.advance1) { pts += 3; detail.push('Advance +3'); }
+    if (isT2 && r.advance2) { pts += 3; detail.push('Advance +3'); }
+    if (isT1 && r.clean1) { pts += 1; detail.push('Clean Sheet +1'); }
+    if (isT2 && r.clean2) { pts += 1; detail.push('Clean Sheet +1'); }
+    if (isT1 && r.hattrick1) { pts += 3; detail.push('Hat Trick +3'); }
+    if (isT2 && r.hattrick2) { pts += 3; detail.push('Hat Trick +3'); }
+    if (isT1 && r.upset && r.result === 'win') { pts += 3; detail.push('Upset +3'); }
+    if (isT1 && r.biggestUpset && r.result === 'win') { pts += 5; detail.push('Biggest Upset +5'); }
+    if (r.goldenBoot === teamName) { pts += 10; detail.push('Golden Boot +10'); }
+    if (r.goldenGlove === teamName) { pts += 5; detail.push('Golden Glove +5'); }
+  });
+  return { pts, detail };
+}
+
+function renderTeamsBreakdown() {
+  const container = document.getElementById('teams-breakdown-list');
+  if (!container) return;
+
+  let teams = teamsGroupFilter === 'all' ? ALL_TEAMS : ALL_TEAMS.filter(t => t.group === teamsGroupFilter);
+  // Sort by points desc
+  const withPts = teams.map(t => ({ ...t, ...calcTeamPoints(t.name), manager: getManagerForTeam(t.name) }));
+  withPts.sort((a, b) => b.pts - a.pts);
+
+  container.innerHTML = withPts.map(t => `
+    <div class="team-breakdown-card">
+      <div class="tb-flag">${t.flag}</div>
+      <div class="tb-info">
+        <div class="tb-name">${t.name}</div>
+        <div class="tb-meta">Group ${t.group} · FIFA #${t.rank}</div>
+        ${t.detail.length ? `<div class="tb-detail">${t.detail.join(' · ')}</div>` : ''}
+      </div>
+      <div class="tb-manager">
+        <div class="mgr-label">Manager</div>
+        <div class="mgr-name">${t.manager || '<span style="color:var(--muted)">Undrafted</span>'}</div>
+      </div>
+      <div class="tb-pts">
+        <div class="pts-num">${t.pts}</div>
+        <div class="pts-lbl">pts</div>
+      </div>
+    </div>`).join('');
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
