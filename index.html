@@ -606,6 +606,7 @@
   .sc-left { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
   .sc-date-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--green); line-height: 1; }
   .sc-date-mon { font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .sc-time { font-size: 0.62rem; color: var(--gold); margin-top: 0.15rem; text-align: center; white-space: nowrap; }
 
   .sc-middle { min-width: 0; display: flex; flex-direction: column; gap: 0.25rem; }
   .sc-meta-row { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
@@ -887,11 +888,18 @@
   <!-- SCHEDULE -->
   <div class="panel" id="panel-schedule">
     <div class="section-title">Upcoming <span>Schedule</span></div>
-    <div class="schedule-filters">
-      <div class="group-btn active" onclick="setScheduleFilter('all', this)">All</div>
-      <div class="group-btn" onclick="setScheduleFilter('mine', this)">My Teams</div>
-      <div class="group-btn" onclick="setScheduleFilter('group', this)">Group Stage</div>
-      <div class="group-btn" onclick="setScheduleFilter('knockout', this)">Knockout</div>
+    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;flex-wrap:wrap;">
+      <div class="schedule-filters" style="margin-bottom:0;">
+        <div class="group-btn active" id="sf-all" onclick="setScheduleFilter('all', this)">All</div>
+        <div class="group-btn" id="sf-manager" onclick="setScheduleFilter('manager', this)">By Manager</div>
+        <div class="group-btn" id="sf-group" onclick="setScheduleFilter('group', this)">Group Stage</div>
+        <div class="group-btn" id="sf-knockout" onclick="setScheduleFilter('knockout', this)">Knockout</div>
+      </div>
+    </div>
+    <div id="schedule-manager-row" style="display:none;margin-bottom:1rem;">
+      <select id="schedule-manager-select" onchange="renderSchedule()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.9rem;outline:none;">
+        <option value="">-- select manager --</option>
+      </select>
     </div>
     <div id="schedule-list"></div>
   </div>
@@ -1058,7 +1066,7 @@ function showTab(id) {
   if (id === 'draft') renderDraft();
   if (id === 'leaderboard') renderLeaderboard();
   if (id === 'results') renderResultsPanel();
-  if (id === 'schedule') renderSchedule();
+  if (id === 'schedule') { populateScheduleManagerSelect(); renderSchedule(); }
   if (id === 'pastresults') renderPastResults();
   if (id === 'teams') { populateTeamsManagerSelect(); renderTeamsBreakdown(); }
 }
@@ -1678,7 +1686,19 @@ function setScheduleFilter(f, el) {
   scheduleFilter = f;
   document.querySelectorAll('.schedule-filters .group-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
+  const managerRow = document.getElementById('schedule-manager-row');
+  if (managerRow) managerRow.style.display = f === 'manager' ? 'block' : 'none';
+  if (f === 'manager') populateScheduleManagerSelect();
   renderSchedule();
+}
+
+function populateScheduleManagerSelect() {
+  const sel = document.getElementById('schedule-manager-select');
+  if (!sel) return;
+  const mgrs = state.managers.filter(Boolean);
+  const current = sel.value;
+  sel.innerHTML = '<option value="">-- select manager --</option>' +
+    mgrs.map(m => `<option value="${m}" ${m === current ? 'selected' : ''}>${m}</option>`).join('');
 }
 
 function renderSchedule() {
@@ -1687,12 +1707,26 @@ function renderSchedule() {
 
   const upcoming = ALL_SCHEDULE.filter(g => !isPlayedGame(g) && isUpcomingGame(g));
   let filtered = upcoming;
-  if (scheduleFilter === 'mine') filtered = upcoming.filter(g => getManagerForTeam(g.home) || getManagerForTeam(g.away));
-  else if (scheduleFilter === 'group') filtered = upcoming.filter(g => g.stage === 'group');
-  else if (scheduleFilter === 'knockout') filtered = upcoming.filter(g => g.stage !== 'group');
+  if (scheduleFilter === 'manager') {
+    const sel = document.getElementById('schedule-manager-select');
+    const mgr = sel ? sel.value : '';
+    if (mgr) {
+      const mgrTeams = state.picks[mgr] || [];
+      filtered = upcoming.filter(g => mgrTeams.includes(g.home) || mgrTeams.includes(g.away));
+    } else {
+      filtered = [];
+    }
+  } else if (scheduleFilter === 'group') {
+    filtered = upcoming.filter(g => g.stage === 'group');
+  } else if (scheduleFilter === 'knockout') {
+    filtered = upcoming.filter(g => g.stage !== 'group');
+  }
 
   if (!filtered.length) {
-    container.innerHTML = '<div class="empty-state"><span class="big">All Caught Up</span>No upcoming games match this filter</div>';
+    const emptyMsg = scheduleFilter === 'manager' && !document.getElementById('schedule-manager-select')?.value
+      ? 'Select a manager above'
+      : 'No upcoming games match this filter';
+    container.innerHTML = `<div class="empty-state"><span class="big">All Caught Up</span>${emptyMsg}</div>`;
     return;
   }
 
@@ -1715,6 +1749,7 @@ function renderSchedule() {
       <div class="sc-left">
         <div class="sc-date-num">${dateInfo.day}</div>
         <div class="sc-date-mon">${dateInfo.month}</div>
+        <div class="sc-time">${g.time}</div>
       </div>
       <div class="sc-middle">
         <div class="sc-meta-row">
