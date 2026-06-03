@@ -868,8 +868,8 @@
         <h4>Bonuses</h4>
         <div class="scoring-row"><span>Clean Sheet (any game)</span><span class="pts">+1</span></div>
         <div class="scoring-row"><span>Survival Point (per game)</span><span class="pts">+1</span></div>
-        <div class="scoring-row"><span>Upset Bonus (15+ spots)</span><span class="pts">+3</span></div>
-        <div class="scoring-row"><span>Biggest Upset (one-time)</span><span class="pts">+5</span></div>
+        <div class="scoring-row"><span>Upset Bonus (15+ spots)</span><span class="pts">+5</span></div>
+        <div class="scoring-row"><span>Biggest Upset (one-time)</span><span class="pts">+10</span></div>
         <div class="scoring-row"><span>Hat Trick</span><span class="pts">+3</span></div>
         <div class="scoring-row"><span>Golden Boot Winner</span><span class="pts">+10</span></div>
         <div class="scoring-row"><span>Golden Glove Winner</span><span class="pts">+5</span></div>
@@ -1309,8 +1309,8 @@ function calcPoints(manager) {
 
     // Upset bonus
     if (r.upset && r.result === 'win' && teams.includes(r.team1)) {
-      breakdown[r.team1].pts += 3;
-      breakdown[r.team1].detail.push("Upset +3");
+      breakdown[r.team1].pts += 5;
+      breakdown[r.team1].detail.push("Upset +5");
     }
     if (r.biggestUpset && r.result === 'win' && teams.includes(r.team1)) {
       breakdown[r.team1].pts += 5;
@@ -1807,8 +1807,8 @@ function renderPastResults() {
       if (!isTeam1 && r.clean2) { pts += 1; detail.push('Clean Sheet +1'); }
       if (isTeam1 && r.hattrick1) { pts += 3; detail.push('Hat Trick +3'); }
       if (!isTeam1 && r.hattrick2) { pts += 3; detail.push('Hat Trick +3'); }
-      if (isTeam1 && r.upset && r.result === 'win') { pts += 3; detail.push('Upset +3'); }
-      if (isTeam1 && r.biggestUpset && r.result === 'win') { pts += 5; detail.push('Biggest Upset +5'); }
+      if (isTeam1 && r.upset && r.result === 'win') { pts += 5; detail.push('Upset +5'); }
+      if (isTeam1 && r.biggestUpset && r.result === 'win') { pts += 10; detail.push('Biggest Upset +10'); }
       if (r.goldenBoot === teamName) { pts += 10; detail.push('Golden Boot +10'); }
       if (r.goldenGlove === teamName) { pts += 5; detail.push('Golden Glove +5'); }
       return { pts, detail };
@@ -1867,8 +1867,8 @@ function calcTeamPoints(teamName) {
     if (isT2 && r.clean2) { pts += 1; detail.push('Clean Sheet +1'); }
     if (isT1 && r.hattrick1) { pts += 3; detail.push('Hat Trick +3'); }
     if (isT2 && r.hattrick2) { pts += 3; detail.push('Hat Trick +3'); }
-    if (isT1 && r.upset && r.result === 'win') { pts += 3; detail.push('Upset +3'); }
-    if (isT1 && r.biggestUpset && r.result === 'win') { pts += 5; detail.push('Biggest Upset +5'); }
+    if (isT1 && r.upset && r.result === 'win') { pts += 5; detail.push('Upset +5'); }
+    if (isT1 && r.biggestUpset && r.result === 'win') { pts += 10; detail.push('Biggest Upset +10'); }
     if (r.goldenBoot === teamName) { pts += 10; detail.push('Golden Boot +10'); }
     if (r.goldenGlove === teamName) { pts += 5; detail.push('Golden Glove +5'); }
   });
