@@ -313,7 +313,7 @@
   .rank-2 .lb-rank { color: #aaa; }
   .rank-3 .lb-rank { color: #cd7f32; }
   .lb-name { font-weight: 600; font-size: 1rem; flex: 1; }
-  .lb-teams-preview { font-size: 0.78rem; color: var(--muted); flex: 2; }
+  .lb-teams-preview { font-size: 0.9rem; color: var(--muted); flex: 2; flex-wrap: wrap; word-break: break-word; line-height: 1.6; }
   .lb-pts {
     font-family: 'Bebas Neue', sans-serif;
     font-size: 2rem;
@@ -838,6 +838,18 @@
         <button class="btn" onclick="logResult()">Log Result</button>
       </div>
 
+      <div class="results-form" style="margin-bottom:1.5rem;">
+        <h3>🌍 Daily Globle Bonus</h3>
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem;">If today's Globle answer is a World Cup team, that manager gets +1 pt. Award it once per day.</p>
+        <div style="display:flex;gap:0.75rem;align-items:flex-end;flex-wrap:wrap;">
+          <div class="field">
+            <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">Today's Globle Country</label>
+            <select id="globle-team" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;min-width:200px;"></select>
+          </div>
+          <button class="btn" onclick="logGloble()">Award Globle Bonus</button>
+        </div>
+      </div>
+
       <div class="results-log">
         <h3>Match Log</h3>
         <div id="results-log-list"></div>
@@ -873,6 +885,7 @@
         <div class="scoring-row"><span>Hat Trick</span><span class="pts">+3</span></div>
         <div class="scoring-row"><span>Golden Boot Winner</span><span class="pts">+10</span></div>
         <div class="scoring-row"><span>Golden Glove Winner</span><span class="pts">+5</span></div>
+        <div class="scoring-row"><span>Globle Answer (daily)</span><span class="pts">+1</span></div>
       </div>
       <div class="scoring-card">
         <h4>Draft Rules</h4>
@@ -1329,6 +1342,13 @@ function calcPoints(manager) {
       breakdown[r.goldenGlove].detail.push("Golden Glove +5");
       bonuses.push("🧤 Golden Glove");
     }
+    // Globle bonus
+    if (r.globle && teams.includes(r.team1)) {
+      if (!breakdown[r.team1]) breakdown[r.team1] = { pts: 0, detail: [] };
+      breakdown[r.team1].pts += 1;
+      breakdown[r.team1].detail.push("Globle +1");
+      bonuses.push("🌍 Globle");
+    }
   });
 
   teams.forEach(t => { total += breakdown[t]?.pts || 0; });
@@ -1363,7 +1383,7 @@ function renderLeaderboard() {
       <div class="lb-header">
         <div class="lb-rank">${i+1}</div>
         <div class="lb-name">${s.manager}</div>
-        <div class="lb-teams-preview">${teams.slice(0,4).map(t=>ALL_TEAMS.find(x=>x.name===t)?.flag||'').join(' ')}${teams.length>4?` +${teams.length-4}`:''}</div>
+        <div class="lb-teams-preview">${teams.map(t=>ALL_TEAMS.find(x=>x.name===t)?.flag||'').join(' ')}</div>
         <div class="lb-pts">${s.total}<span> pts</span></div>
         <div class="lb-expand">▾</div>
       </div>
@@ -1399,7 +1419,36 @@ function renderResultsPanel() {
   }
   populateResultTeams();
   populateAwardSelects();
+  populateGlobleSelect();
   renderResultLog();
+}
+
+function populateGlobleSelect() {
+  const sel = document.getElementById('globle-team');
+  if (!sel) return;
+  const opts = '<option value="">-- select country --</option>' +
+    ALL_TEAMS.map(t => `<option value="${t.name}">${t.flag} ${t.name}</option>`).join('');
+  sel.innerHTML = opts;
+}
+
+async function logGloble() {
+  const team = document.getElementById('globle-team').value;
+  if (!team) return toast("Select a country first");
+  const mgr = getManagerForTeam(team);
+  if (!mgr) return toast(`${team} is unowned — no bonus to award`);
+  const today = new Date().toISOString().slice(0, 10);
+  const entry = {
+    team1: team, team2: '', stage: 'group', result: 'globle',
+    rank1: null, rank2: null, clean1: false, clean2: false,
+    hattrick1: false, hattrick2: false, advance1: false, advance2: false,
+    upset: false, biggestUpset: false, goldenBoot: null, goldenGlove: null,
+    globle: true, globleDate: today
+  };
+  const res = await api("logResult", { result: entry });
+  if (res?.ok) {
+    toast(`🌍 Globle bonus +1 awarded to ${mgr} (${team})!`);
+    renderResultLog();
+  }
 }
 
 function populateResultTeams() {
@@ -1458,6 +1507,17 @@ function renderResultLog() {
   }
   const stageLabel = { group:'Group Stage', r32:'R32', r16:'R16', qf:'QF', sf:'SF', final:'Final' };
   log.innerHTML = [...state.results].reverse().map(r => {
+    // Globle entry — render differently
+    if (r.globle) {
+      const mgr = getManagerForTeam(r.team1);
+      const flag = ALL_TEAMS.find(t => t.name === r.team1)?.flag || '🌍';
+      return `<div class="result-entry">
+        <div class="re-match">🌍 Globle: ${flag} ${r.team1}</div>
+        <div class="re-stage">${r.globleDate || ''}</div>
+        <div class="re-pts" style="flex:2;color:var(--gold);">+1 → ${mgr || 'Unowned'}</div>
+        <button class="re-del" onclick="deleteResult(${r.id})">✕</button>
+      </div>`;
+    }
     const extras = [];
     if (r.clean1) extras.push(`${r.team1} clean sheet`);
     if (r.clean2) extras.push(`${r.team2} clean sheet`);
@@ -1811,6 +1871,7 @@ function renderPastResults() {
       if (isTeam1 && r.biggestUpset && r.result === 'win') { pts += 10; detail.push('Biggest Upset +10'); }
       if (r.goldenBoot === teamName) { pts += 10; detail.push('Golden Boot +10'); }
       if (r.goldenGlove === teamName) { pts += 5; detail.push('Golden Glove +5'); }
+      if (r.globle && r.team1 === teamName) { pts += 1; detail.push('Globle +1'); }
       return { pts, detail };
     }
 
@@ -1871,6 +1932,7 @@ function calcTeamPoints(teamName) {
     if (isT1 && r.biggestUpset && r.result === 'win') { pts += 10; detail.push('Biggest Upset +10'); }
     if (r.goldenBoot === teamName) { pts += 10; detail.push('Golden Boot +10'); }
     if (r.goldenGlove === teamName) { pts += 5; detail.push('Golden Glove +5'); }
+    if (r.globle && r.team1 === teamName) { pts += 1; detail.push('Globle +1'); }
   });
   return { pts, detail };
 }
