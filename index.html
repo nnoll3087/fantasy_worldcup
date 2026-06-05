@@ -902,9 +902,16 @@
   <!-- COUNTDOWN -->
   <div class="panel active" id="panel-countdown">
     <div class="countdown-hero">
-      <div class="countdown-label">KICKOFF IN</div>
-      <div class="countdown-timer" id="countdown-timer">--:--:--:--</div>
-      <div class="countdown-date">June 11, 2026 · Mexico City · Mexico vs South Africa · 3:00 PM ET</div>
+      <div class="countdown-label">WORLD CUP KICKS OFF IN</div>
+      <div class="countdown-units" id="countdown-units">
+        <div class="countdown-unit"><div class="countdown-num" id="cd-days">--</div><div class="countdown-unit-label">DAYS</div></div>
+        <div class="countdown-sep">:</div>
+        <div class="countdown-unit"><div class="countdown-num" id="cd-hours">--</div><div class="countdown-unit-label">HRS</div></div>
+        <div class="countdown-sep">:</div>
+        <div class="countdown-unit"><div class="countdown-num" id="cd-mins">--</div><div class="countdown-unit-label">MIN</div></div>
+        <div class="countdown-sep">:</div>
+        <div class="countdown-unit"><div class="countdown-num" id="cd-secs">--</div><div class="countdown-unit-label">SEC</div></div>
+      </div>
     </div>
     <div class="ticker-container">
       <div class="ticker-card" id="ticker-card">
@@ -912,10 +919,8 @@
         <div class="ticker-text" id="ticker-text"></div>
         <div class="ticker-attribution" id="ticker-attribution"></div>
       </div>
-      <div class="ticker-nav">
-        <button class="ticker-btn" onclick="prevTicker()">&#8592;</button>
+      <div class="ticker-dots-row">
         <div class="ticker-dots" id="ticker-dots"></div>
-        <button class="ticker-btn" onclick="nextTicker()">&#8594;</button>
       </div>
     </div>
   </div>
@@ -947,13 +952,7 @@
 
   <!-- TEAMS -->
   <div class="panel" id="panel-teams">
-    <div class="section-title">Manager <span>Teams</span></div>
-    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.25rem;flex-wrap:wrap;">
-      <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);">View Manager</label>
-      <select id="teams-manager-select" onchange="renderTeamsBreakdown()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.9rem;outline:none;">
-        <option value="all">All Teams</option>
-      </select>
-    </div>
+    <div class="section-title">All <span>Teams</span></div>
     <div id="teams-breakdown-list"></div>
   </div>
 
@@ -1972,54 +1971,22 @@ function renderTeamsBreakdown() {
   const container = document.getElementById('teams-breakdown-list');
   if (!container) return;
 
-  const sel = document.getElementById('teams-manager-select');
-  const selectedMgr = sel ? sel.value : 'all';
-  const mgrs = state.managers.filter(Boolean);
+  // Flat list: all 48 teams sorted by points desc, then rank asc
+  const withPts = ALL_TEAMS.map(t => {
+    const manager = getManagerForTeam(t.name);
+    return { ...t, ...calcTeamPoints(t.name), manager };
+  }).sort((a, b) => b.pts - a.pts || a.rank - b.rank);
 
-  if (selectedMgr === 'all') {
-    // Show all managers as grouped sections
-    if (!mgrs.length) {
-      container.innerHTML = '<div class="empty-state"><span class="big">No Managers Yet</span>Set up managers first</div>';
-      return;
-    }
-    container.innerHTML = mgrs.map(mgr => {
-      const teams = (state.picks[mgr] || []);
-      const withPts = teams.map(name => {
-        const t = ALL_TEAMS.find(x => x.name === name) || { name, flag: '', group: '?', rank: 99 };
-        return { ...t, ...calcTeamPoints(name) };
-      }).sort((a, b) => b.pts - a.pts);
-      const totalPts = withPts.reduce((s, t) => s + t.pts, 0);
-
-      return `<div style="margin-bottom:1.5rem;">
-        <div style="display:flex;align-items:baseline;gap:0.75rem;margin-bottom:0.6rem;">
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--green);letter-spacing:0.08em;">${mgr}</span>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--gold);">${totalPts} pts</span>
-        </div>
-        ${withPts.length ? withPts.map(t => renderTeamCard(t)).join('') : '<div style="color:var(--muted);font-size:0.82rem;padding:0.5rem 0;">No teams drafted</div>'}
-      </div>`;
-    }).join('');
-  } else {
-    // Single manager view
-    const teams = (state.picks[selectedMgr] || []);
-    const withPts = teams.map(name => {
-      const t = ALL_TEAMS.find(x => x.name === name) || { name, flag: '', group: '?', rank: 99 };
-      return { ...t, ...calcTeamPoints(name) };
-    }).sort((a, b) => b.pts - a.pts);
-    const totalPts = withPts.reduce((s, t) => s + t.pts, 0);
-
-    container.innerHTML = `<div style="display:flex;align-items:baseline;gap:0.75rem;margin-bottom:1rem;">
-      <span style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--green);letter-spacing:0.08em;">${selectedMgr}</span>
-      <span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--gold);">${totalPts} total pts</span>
-    </div>` + (withPts.length ? withPts.map(t => renderTeamCard(t)).join('') : '<div class="empty-state"><span class="big">No Teams Yet</span></div>');
-  }
+  container.innerHTML = withPts.map(t => renderTeamCard(t)).join('');
 }
+
 
 function renderTeamCard(t) {
   return `<div class="tb-card">
     <div class="tb-flag">${t.flag}</div>
     <div class="tb-info">
       <div class="tb-name">${t.name}</div>
-      <div class="tb-meta">Group ${t.group} · FIFA #${t.rank}</div>
+      <div class="tb-meta">Group ${t.group} · FIFA #${t.rank} · <span style="color:var(--green)">${t.manager || 'Undrafted'}</span></div>
       ${t.detail && t.detail.length ? `<div class="tb-detail">${t.detail.join(' · ')}</div>` : ''}
     </div>
     <div class="tb-pts-col">
@@ -2036,16 +2003,17 @@ function renderTeamCard(t) {
 const KICKOFF = new Date('2026-06-11T19:00:00Z'); // 3pm ET = 19:00 UTC
 
 function updateCountdownTimer() {
-  const el = document.getElementById('countdown-timer');
-  if (!el) return;
   const now = new Date();
   const diff = KICKOFF - now;
-  if (diff <= 0) { el.textContent = "WE ARE LIVE"; return; }
-  const days = Math.floor(diff / 86400000);
-  const hrs  = Math.floor((diff % 86400000) / 3600000);
-  const mins = Math.floor((diff % 3600000) / 60000);
-  const secs = Math.floor((diff % 60000) / 1000);
-  el.textContent = `${String(days).padStart(2,'0')}:${String(hrs).padStart(2,'0')}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+  const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  if (diff <= 0) {
+    setEl('cd-days', '00'); setEl('cd-hours', '00'); setEl('cd-mins', '00'); setEl('cd-secs', '00');
+    return;
+  }
+  setEl('cd-days',  String(Math.floor(diff / 86400000)).padStart(2,'0'));
+  setEl('cd-hours', String(Math.floor((diff % 86400000) / 3600000)).padStart(2,'0'));
+  setEl('cd-mins',  String(Math.floor((diff % 3600000) / 60000)).padStart(2,'0'));
+  setEl('cd-secs',  String(Math.floor((diff % 60000) / 1000)).padStart(2,'0'));
 }
 
 // ─── TICKER DATA ──────────────────────────────────────────────────────────────
@@ -2191,7 +2159,7 @@ function renderCountdown() {
   tickerIndex = 0;
   renderTickerItem(false);
   if (tickerInterval) clearInterval(tickerInterval);
-  tickerInterval = setInterval(() => nextTicker(true), 8000);
+  tickerInterval = setInterval(() => nextTicker(true), 15000);
   renderTickerDots();
 }
 
@@ -2245,18 +2213,9 @@ function renderTickerDots() {
 function nextTicker(auto) {
   tickerIndex = (tickerIndex + 1) % tickerItems.length;
   renderTickerItem(true);
-  if (!auto) {
-    if (tickerInterval) clearInterval(tickerInterval);
-    tickerInterval = setInterval(() => nextTicker(true), 8000);
-  }
 }
 
-function prevTicker() {
-  tickerIndex = (tickerIndex - 1 + tickerItems.length) % tickerItems.length;
-  renderTickerItem(true);
-  if (tickerInterval) clearInterval(tickerInterval);
-  tickerInterval = setInterval(() => nextTicker(true), 8000);
-}
+function prevTicker() { /* removed */ }
 
 function renderDraftResults() {
   const panel = document.getElementById('panel-draft');
@@ -2265,21 +2224,49 @@ function renderDraftResults() {
     panel.innerHTML = '<div class="section-title">Draft <span>Results</span></div><div class="empty-state"><span class="big">No Draft Yet</span></div>';
     return;
   }
-  let html = '<div class="section-title">Draft <span>Results</span></div><div class="draft-results-grid">';
-  mgrs.forEach(mgr => {
-    const teams = (state.picks[mgr] || []).map(name => ALL_TEAMS.find(t => t.name === name)).filter(Boolean);
-    teams.sort((a, b) => a.rank - b.rank);
-    html += `<div class="draft-mgr-card">
-      <div class="draft-mgr-name">${mgr}</div>
-      ${teams.map(t => `<div class="draft-team-row">
-        <span class="draft-team-flag">${t.flag}</span>
-        <span class="draft-team-name">${t.name}</span>
-        <span class="draft-team-group">Grp ${t.group}</span>
-        <span class="draft-team-rank">#${t.rank}</span>
-      </div>`).join('')}
+
+  // Build snake order
+  const order = [];
+  const rounds = Math.ceil(48 / mgrs.length);
+  for (let r = 0; r < rounds; r++) {
+    const round = r % 2 === 0 ? [...mgrs] : [...mgrs].reverse();
+    round.forEach(m => order.push(m));
+  }
+
+  // Build pick list in order
+  const picks = []; // {pick, mgr, team}
+  const mgrPickCount = {};
+  mgrs.forEach(m => { mgrPickCount[m] = 0; });
+
+  order.slice(0, 48).forEach((mgr, i) => {
+    const idx = mgrPickCount[mgr] || 0;
+    const teamName = (state.picks[mgr] || [])[idx];
+    const team = teamName ? ALL_TEAMS.find(t => t.name === teamName) : null;
+    picks.push({ pick: i + 1, mgr, team });
+    mgrPickCount[mgr] = idx + 1;
+  });
+
+  let html = '<div class="section-title">Draft <span>Results</span></div>';
+  picks.forEach(p => {
+    if (!p.team && !p.mgr) return;
+    const flag = p.team?.flag || '—';
+    const name = p.team?.name || 'Undrafted';
+    const grp = p.team?.group || '?';
+    const rank = p.team?.rank || '—';
+    html += `<div class="dr-card">
+      <div class="dr-pick">${p.pick}</div>
+      <div class="dr-flag">${flag}</div>
+      <div class="dr-body">
+        <div class="dr-team">${name}</div>
+        <div class="dr-mgr">${p.mgr}</div>
+      </div>
+      <div class="dr-meta">
+        <span class="dr-group">Grp ${grp}</span>
+        <span class="dr-rank">#${rank}</span>
+      </div>
     </div>`;
   });
-  html += '</div>';
+
   panel.innerHTML = html;
 }
 
