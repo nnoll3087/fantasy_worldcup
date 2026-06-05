@@ -675,6 +675,135 @@
   .tb-pts-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--gold); line-height: 1; }
   .tb-pts-lbl { font-size: 0.58rem; color: var(--muted); }
 
+
+  /* COUNTDOWN */
+  .countdown-hero {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    text-align: center;
+    padding: 2.5rem 1.5rem 2rem;
+    margin-bottom: 1.25rem;
+  }
+  .countdown-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.78rem;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+  }
+  .countdown-units {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .countdown-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    min-width: 80px;
+  }
+  .countdown-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3rem, 8vw, 5rem);
+    color: var(--gold);
+    line-height: 1;
+    letter-spacing: 0.02em;
+  }
+  .countdown-unit-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    margin-top: 0.4rem;
+  }
+  .countdown-sep {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3rem;
+    color: var(--border);
+    padding-top: 0.8rem;
+    line-height: 1;
+  }
+
+  /* TICKER */
+  .ticker-container { max-width: 100%; }
+  .ticker-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.1rem;
+    min-height: 110px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: opacity 0.5s ease;
+  }
+  .ticker-card.fading { opacity: 0; }
+  .ticker-category {
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--green);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0.08rem 0.35rem;
+    width: fit-content;
+  }
+  .ticker-text {
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--text);
+  }
+  .ticker-attribution {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 0.1rem;
+    line-height: 1.5;
+  }
+  .ticker-attribution .mgr-tag { color: var(--gold); }
+  .ticker-dots-row { display: flex; justify-content: center; margin-top: 0.75rem; }
+  .ticker-dots { display: flex; gap: 0.35rem; align-items: center; }
+  .ticker-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+  .ticker-dot.active { background: var(--green); }
+
+  /* DRAFT RESULTS */
+  .dr-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.65rem 0.9rem;
+    margin-bottom: 0.4rem;
+    display: grid;
+    grid-template-columns: 32px 2rem 1fr auto;
+    gap: 0.65rem;
+    align-items: center;
+  }
+  .dr-pick {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    color: var(--muted);
+    text-align: center;
+  }
+  .dr-flag { font-size: 1.4rem; text-align: center; }
+  .dr-body { min-width: 0; }
+  .dr-team { font-weight: 600; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dr-mgr { font-size: 0.72rem; color: var(--green); margin-top: 0.1rem; }
+  .dr-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem; flex-shrink: 0; }
+  .dr-group {
+    font-size: 0.62rem; color: var(--muted);
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 3px; padding: 0.08rem 0.3rem; letter-spacing: 0.05em;
+  }
+  .dr-rank { font-size: 0.72rem; color: var(--muted); }
+
 </style>
 </head>
 <body>
