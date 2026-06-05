@@ -692,12 +692,13 @@
 </header>
 
 <div class="tabs">
-  <div class="tab active" onclick="showTab('draft')">Draft</div>
-  <div class="tab" onclick="showTab('leaderboard')">Leaderboard</div>
+  <div class="tab active" onclick="showTab('countdown')">Countdown</div>
   <div class="tab" onclick="showTab('schedule')">Schedule</div>
-  <div class="tab" onclick="showTab('pastresults')">Past Results</div>
+  <div class="tab" onclick="showTab('leaderboard')">Leaderboard</div>
   <div class="tab" onclick="showTab('teams')">Teams</div>
+  <div class="tab" onclick="showTab('pastresults')">Past Results</div>
   <div class="tab" onclick="showTab('scoring')">Scoring</div>
+  <div class="tab" onclick="showTab('draft')">Draft Results</div>
   <div class="tab" onclick="showTab('results')">Enter Results</div>
 </div>
 
@@ -711,8 +712,8 @@
   </div>
 
   <!-- DRAFT -->
-  <div class="panel active" id="panel-draft">
-    <div class="section-title">Snake <span>Draft</span></div>
+  <div class="panel" id="panel-draft">
+    <div class="section-title">Draft <span>Results</span></div>
 
     <div class="draft-controls">
       <div class="field">
@@ -898,6 +899,27 @@
   </div>
 
 
+  <!-- COUNTDOWN -->
+  <div class="panel active" id="panel-countdown">
+    <div class="countdown-hero">
+      <div class="countdown-label">KICKOFF IN</div>
+      <div class="countdown-timer" id="countdown-timer">--:--:--:--</div>
+      <div class="countdown-date">June 11, 2026 · Mexico City · Mexico vs South Africa · 3:00 PM ET</div>
+    </div>
+    <div class="ticker-container">
+      <div class="ticker-card" id="ticker-card">
+        <div class="ticker-category" id="ticker-category"></div>
+        <div class="ticker-text" id="ticker-text"></div>
+        <div class="ticker-attribution" id="ticker-attribution"></div>
+      </div>
+      <div class="ticker-nav">
+        <button class="ticker-btn" onclick="prevTicker()">&#8592;</button>
+        <div class="ticker-dots" id="ticker-dots"></div>
+        <button class="ticker-btn" onclick="nextTicker()">&#8594;</button>
+      </div>
+    </div>
+  </div>
+
   <!-- SCHEDULE -->
   <div class="panel" id="panel-schedule">
     <div class="section-title">Upcoming <span>Schedule</span></div>
@@ -1076,7 +1098,8 @@ function showTab(id) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('panel-' + id).classList.add('active');
   event.target.classList.add('active');
-  if (id === 'draft') renderDraft();
+  if (id === 'draft') renderDraftResults();
+  if (id === 'countdown') renderCountdown();
   if (id === 'leaderboard') renderLeaderboard();
   if (id === 'results') renderResultsPanel();
   if (id === 'schedule') { populateScheduleManagerSelect(); renderSchedule(); }
@@ -1710,7 +1733,14 @@ function pointsAtStake(stage) {
   return map[stage] || 0;
 }
 
-function stageName(stage) {
+function stageName(stage, game) {
+  if (stage === 'group' && game) {
+    // find the group letter for this game
+    const homeTeam = ALL_TEAMS.find(t => t.name === game.home);
+    const awayTeam = ALL_TEAMS.find(t => t.name === game.away);
+    const grp = homeTeam?.group || awayTeam?.group || '?';
+    return `Group ${grp}`;
+  }
   const map = { group:'Group Stage', r32:'Round of 32', r16:'Round of 16', qf:'Quarterfinal', sf:'Semifinal', final:'Final' };
   return map[stage] || stage;
 }
@@ -1813,7 +1843,7 @@ function renderSchedule() {
       </div>
       <div class="sc-middle">
         <div class="sc-meta-row">
-          <span class="sc-stage">${stageName(g.stage)}</span>
+          <span class="sc-stage">${stageName(g.stage, g)}</span>
           <span class="sc-venue">${g.venue !== 'TBD' ? g.venue : 'Venue TBD'}</span>
         </div>
         <div class="sc-team-row">
@@ -1881,7 +1911,7 @@ function renderPastResults() {
     return `<div class="pr-card">
       <div class="pr-card-header">
         <div class="pr-card-match">${homeFlag} ${r.team1} ${r.result === 'win' ? 'def.' : 'drew'} ${awayFlag} ${r.team2}</div>
-        <div class="pr-card-stage">${stageName(r.stage)}</div>
+        <div class="pr-card-stage">${stageName(r.stage, {home:r.team1,away:r.team2})}</div>
       </div>
       <div class="pr-rows">
         <div class="pr-row">
@@ -2000,12 +2030,268 @@ function renderTeamCard(t) {
 }
 
 
+
+// ─── COUNTDOWN + TICKER ───────────────────────────────────────────────────────
+
+const KICKOFF = new Date('2026-06-11T19:00:00Z'); // 3pm ET = 19:00 UTC
+
+function updateCountdownTimer() {
+  const el = document.getElementById('countdown-timer');
+  if (!el) return;
+  const now = new Date();
+  const diff = KICKOFF - now;
+  if (diff <= 0) { el.textContent = "WE ARE LIVE"; return; }
+  const days = Math.floor(diff / 86400000);
+  const hrs  = Math.floor((diff % 86400000) / 3600000);
+  const mins = Math.floor((diff % 3600000) / 60000);
+  const secs = Math.floor((diff % 60000) / 1000);
+  el.textContent = `${String(days).padStart(2,'0')}:${String(hrs).padStart(2,'0')}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+}
+
+// ─── TICKER DATA ──────────────────────────────────────────────────────────────
+
+const TICKER_ITEMS = [
+
+  // ── GEO FACTS ──
+  { cat: "GEO FACT", text: "Bolivia is the highest-altitude World Cup qualifier. La Paz sits at 11,900 feet. Visiting teams literally struggle to breathe just getting off the plane.", attr: null },
+  { cat: "GEO FACT", text: "Bosnia and Herzegovina is one country with two names, two presidents, and three governing entities running simultaneously. Their soccer team somehow functions better than their government.", attr: { name: "Bosnia", flag: "🇧🇦", mgr: "AK47" } },
+  { cat: "GEO FACT", text: "Qatar is roughly the size of Connecticut but sits on the world's third-largest natural gas reserves. Small country. Enormous leverage.", attr: { name: "Qatar", flag: "🇶🇦", mgr: "Nate Dawg" } },
+  { cat: "GEO FACT", text: "Panama's canal handles about 5% of all global maritime trade. The country itself is only 50 miles wide at its narrowest point.", attr: { name: "Panama", flag: "🇵🇦", mgr: "Corbin" } },
+  { cat: "GEO FACT", text: "Morocco sits at the northwestern tip of Africa — close enough to Spain that you can see it across the Strait of Gibraltar on a clear day.", attr: { name: "Morocco", flag: "🇲🇦", mgr: "Nate Dawg" } },
+  { cat: "GEO FACT", text: "The Netherlands has more bicycles than people — 23 million bikes for 17 million residents. The most Dutch fact imaginable.", attr: { name: "Netherlands", flag: "🇳🇱", mgr: "Nate Dawg" } },
+  { cat: "GEO FACT", text: "Cabo Verde is an island nation 350 miles off the coast of West Africa that didn't exist as a sovereign country until 1975.", attr: { name: "Cabo Verde", flag: "🇨🇻", mgr: "Nate Dawg" } },
+  { cat: "GEO FACT", text: "Japan has vending machines that outnumber its convenience stores. It also has zero World Cup titles despite being one of Asia's most technically gifted programs.", attr: { name: "Japan", flag: "🇯🇵", mgr: "Nate Dawg" } },
+  { cat: "GEO FACT", text: "Ecuador straddles the equator — the word Ecuador literally means equator in Spanish. The country is named after a line of latitude.", attr: { name: "Ecuador", flag: "🇪🇨", mgr: "Nate Dawg" } },
+  { cat: "GEO FACT", text: "Scotland shares an island with England and Wales. It has never made it past the group stage of any World Cup. Eight attempts. Zero knockout wins.", attr: { name: "Scotland", flag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿", mgr: "AK47" } },
+  { cat: "GEO FACT", text: "South Africa is the only country to have hosted the World Cup without advancing past the group stage in their own tournament.", attr: { name: "South Africa", flag: "🇿🇦", mgr: "Pizza" } },
+  { cat: "GEO FACT", text: "Iraq sits between the Tigris and Euphrates rivers — literally the Fertile Crescent, the cradle of civilization. One of the oldest inhabited places on Earth.", attr: { name: "Iraq", flag: "🇮🇶", mgr: "Pizza" } },
+  { cat: "GEO FACT", text: "Uzbekistan is one of only two doubly landlocked countries in the world — surrounded entirely by other landlocked nations.", attr: { name: "Uzbekistan", flag: "🇺🇿", mgr: "Corbin" } },
+  { cat: "GEO FACT", text: "Curacao is a Caribbean island of just 180 square miles with a FIFA ranking of 82. It has more flamingos per square mile than players in its national squad.", attr: { name: "Curacao", flag: "🇨🇼", mgr: "AK47" } },
+  { cat: "GEO FACT", text: "New Zealand is the only World Cup nation that's home to more sheep than people — roughly 6 sheep per person. The sheep have no stake in the outcome.", attr: { name: "New Zealand", flag: "🇳🇿", mgr: "Blaze Nugs" } },
+  { cat: "GEO FACT", text: "Canada is the second-largest country in the world by land area. It took them until 2022 to qualify for their second ever World Cup. Geography and soccer have a complicated relationship.", attr: { name: "Canada", flag: "🇨🇦", mgr: "AK47" } },
+  { cat: "GEO FACT", text: "Haiti shares the island of Hispaniola with the Dominican Republic and became the first Black republic in the world after its 1804 revolution.", attr: { name: "Haiti", flag: "🇭🇹", mgr: "PLang" } },
+  { cat: "GEO FACT", text: "Algeria is the largest country in Africa by land area — bigger than the continental United States. That is a genuinely staggering amount of territory.", attr: { name: "Algeria", flag: "🇩🇿", mgr: "Pizza" } },
+  { cat: "GEO FACT", text: "Saudi Arabia didn't have a public movie theater until 2018. They qualified for their 7th World Cup before most people knew they had a soccer team.", attr: { name: "Saudi Arabia", flag: "🇸🇦", mgr: "Blaze Nugs" } },
+  { cat: "GEO FACT", text: "Jordan is a desert nation sharing borders with Israel, Syria, Iraq, and Saudi Arabia. The Dead Sea — the lowest point on Earth — sits on its western edge.", attr: { name: "Jordan", flag: "🇯🇴", mgr: "Corbin" } },
+  { cat: "GEO FACT", text: "Congo DR is the second-largest country in Africa and contains 60% of Africa's rainforest. A genuinely enormous place.", attr: { name: "Congo DR", flag: "🇨🇩", mgr: "Blaze Nugs" } },
+  { cat: "GEO FACT", text: "Czechia only officially changed its name from Czech Republic in 2016. Most people still haven't received the memo.", attr: { name: "Czechia", flag: "🇨🇿", mgr: "AK47" } },
+  { cat: "GEO FACT", text: "Austria gave the world Mozart, Freud, and Arnold Schwarzenegger. Its soccer team has historically given the world considerably less.", attr: { name: "Austria", flag: "🇦🇹", mgr: "Corbin" } },
+  { cat: "GEO FACT", text: "Sweden is home to IKEA, ABBA, and Spotify. Their soccer style has nothing to do with any of those things and everything to do with structured 4-4-2 football.", attr: { name: "Sweden", flag: "🇸🇪", mgr: "PLang" } },
+  { cat: "GEO FACT", text: "Tunisia is the northernmost country in Africa, sitting directly across the Mediterranean from Italy. Ancient Carthaginians nearly conquered Rome from this general vicinity.", attr: { name: "Tunisia", flag: "🇹🇳", mgr: "PLang" } },
+  { cat: "GEO FACT", text: "Belgium is smaller than West Virginia but has three official languages, six governments, and routinely produces world-class footballers out of what appears to be pure institutional spite.", attr: { name: "Belgium", flag: "🇧🇪", mgr: "Corbin" } },
+  { cat: "GEO FACT", text: "Ghana sits on the Gulf of Guinea and was the first sub-Saharan African country to gain independence from colonial rule, in 1957.", attr: { name: "Ghana", flag: "🇬🇭", mgr: "Blaze Nugs" } },
+  { cat: "GEO FACT", text: "Australia is so large it has six time zones, yet its entire soccer talent pipeline runs through European club academies. Distance is relative.", attr: { name: "Australia", flag: "🇦🇺", mgr: "Nate Dawg" } },
+  { cat: "GEO FACT", text: "Egypt is home to the last surviving Wonder of the Ancient World. It is also home to Mohamed Salah, which some consider an equivalent feat.", attr: { name: "Egypt", flag: "🇪🇬", mgr: "Nate Dawg" } },
+  { cat: "GEO FACT", text: "Colombia sits on both the Pacific Ocean and the Caribbean Sea — one of only two South American nations with coastline on two oceans.", attr: { name: "Colombia", flag: "🇨🇴", mgr: "AK47" } },
+  { cat: "GEO FACT", text: "Iran is home to one of the oldest continuous civilizations on Earth, dating back over 7,000 years. Persian poetry and mathematics shaped the modern world. Their goalkeeper once punched a teammate during a warm-up.", attr: { name: "Iran", flag: "🇮🇷", mgr: "Pizza" } },
+  { cat: "GEO FACT", text: "Turkiye straddles Europe and Asia — connected by the Bosphorus strait in Istanbul. Literally a foot in both worlds. Their soccer is similarly difficult to categorize.", attr: { name: "Turkiye", flag: "🇹🇷", mgr: "Blaze Nugs" } },
+  { cat: "GEO FACT", text: "Mexico City is built on the former bed of Lake Texcoco, which the Aztecs drained to build their capital. The ground is still sinking today.", attr: { name: "Mexico", flag: "🇲🇽", mgr: "PLang" } },
+  { cat: "GEO FACT", text: "Korea Republic is a peninsula nation that has been technically at war with its northern neighbor since 1953. They channel that national tension directly into their pressing game.", attr: { name: "Korea Republic", flag: "🇰🇷", mgr: "Corbin" } },
+  { cat: "GEO FACT", text: "Paraguay is entirely landlocked but has two massive rivers — the Paraguay and the Paraná — giving it more freshwater coastline than most coastal nations.", attr: { name: "Paraguay", flag: "🇵🇾", mgr: "PLang" } },
+
+  // ── SOCCER HISTORY ──
+  { cat: "SOCCER HISTORY", text: "Spain won back-to-back European Championships in 2008 and 2012, sandwiching the 2010 World Cup. Three major trophies in four years — the greatest international run of the modern era.", attr: { name: "Spain", flag: "🇪🇸", mgr: "AK47" } },
+  { cat: "SOCCER HISTORY", text: "France's 2018 World Cup squad had 15 of 23 players with African heritage. Diversity was their single greatest competitive advantage.", attr: { name: "France", flag: "🇫🇷", mgr: "Blaze Nugs" } },
+  { cat: "SOCCER HISTORY", text: "Morocco beat Spain and Portugal in 2022 to become the first African nation to reach a World Cup semifinal. Their defensive wall was one of the most disciplined ever assembled.", attr: { name: "Morocco", flag: "🇲🇦", mgr: "Nate Dawg" } },
+  { cat: "SOCCER HISTORY", text: "Brazil has never won the World Cup outside of the Americas. Five titles. All of them on this side of the planet.", attr: { name: "Brazil", flag: "🇧🇷", mgr: "Pizza" } },
+  { cat: "SOCCER HISTORY", text: "Croatia reached the 2018 World Cup final with a population of 4 million. Luka Modric was 32, played 690 minutes, won the Golden Ball, and made every other midfielder look slow.", attr: { name: "Croatia", flag: "🇭🇷", mgr: "Corbin" } },
+  { cat: "SOCCER HISTORY", text: "Germany's 7-1 demolition of Brazil in the 2014 semifinal — the Mineirazo — remains the most surreal 90 minutes in World Cup history. Brazilians still whisper about it.", attr: { name: "Germany", flag: "🇩🇪", mgr: "Blaze Nugs" } },
+  { cat: "SOCCER HISTORY", text: "Argentina's 2022 title completed Messi's career arc — a 36-year journey involving Copa Americas, Olympic gold, three lost finals, and finally the one that mattered most.", attr: { name: "Argentina", flag: "🇦🇷", mgr: "Corbin" } },
+  { cat: "SOCCER HISTORY", text: "England won the World Cup in 1966. That is the only thing they have ever won. They have been dining out on it for 60 consecutive years.", attr: { name: "England", flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", mgr: "PLang" } },
+  { cat: "SOCCER HISTORY", text: "Portugal has never won the World Cup despite producing Eusébio, Figo, and Ronaldo — three of the most technically gifted players of their respective generations.", attr: { name: "Portugal", flag: "🇵🇹", mgr: "Pizza" } },
+  { cat: "SOCCER HISTORY", text: "Senegal knocked out defending champions France in the very first game of the 2002 World Cup. El Hadji Diouf was electric. The entire continent erupted.", attr: { name: "Senegal", flag: "🇸🇳", mgr: "Pizza" } },
+  { cat: "SOCCER HISTORY", text: "Netherlands reached three World Cup finals — 1974, 1978, and 2010 — and lost all three. They invented Total Football and somehow turned it into total heartbreak.", attr: { name: "Netherlands", flag: "🇳🇱", mgr: "Nate Dawg" } },
+  { cat: "SOCCER HISTORY", text: "South Korea reached the 2002 World Cup semifinal on home soil, beating Spain and Germany along the way. The greatest World Cup run by any Asian nation, ever.", attr: { name: "Korea Republic", flag: "🇰🇷", mgr: "Corbin" } },
+  { cat: "SOCCER HISTORY", text: "Uruguay won the first ever World Cup in 1930 on home soil, then won it again in 1950 in what Brazil still calls the Maracanazo. Two titles. Both defining moments in the sport.", attr: { name: "Uruguay", flag: "🇺🇾", mgr: "AK47" } },
+  { cat: "SOCCER HISTORY", text: "Norway's Erling Haaland has scored 30+ international goals before age 25. At this World Cup he is the most dangerous striker on the planet, full stop.", attr: { name: "Norway", flag: "🇳🇴", mgr: "PLang" } },
+  { cat: "SOCCER HISTORY", text: "Scotland holds the record for most World Cup appearances without a single knockout stage win. Eight tournaments. Zero knockout wins. An historically impressive feat of sustained underperformance.", attr: { name: "Scotland", flag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿", mgr: "AK47" } },
+  { cat: "SOCCER HISTORY", text: "Japan beat Germany and Spain in the 2022 group stage — two former World Cup champions — before losing to Croatia on penalties. One of the great group stage runs of the modern era.", attr: { name: "Japan", flag: "🇯🇵", mgr: "Nate Dawg" } },
+  { cat: "SOCCER HISTORY", text: "Switzerland has not lost a group stage game in their last four World Cups. They have also not won anything. They are reliably, impressively, magnificently mediocre.", attr: { name: "Switzerland", flag: "🇨🇭", mgr: "Pizza" } },
+  { cat: "SOCCER HISTORY", text: "Belgium has been ranked #1 in the world and has never won a major international trophy. The greatest underachiever in the history of international soccer. A golden generation. A bronze cabinet.", attr: { name: "Belgium", flag: "🇧🇪", mgr: "Corbin" } },
+  { cat: "SOCCER HISTORY", text: "Tunisia was the first African nation to win a World Cup game, beating Mexico 3-1 in 1978. They have been coasting on that factoid ever since.", attr: { name: "Tunisia", flag: "🇹🇳", mgr: "PLang" } },
+  { cat: "SOCCER HISTORY", text: "Ghana's 2010 quarterfinal run ended when Luis Suarez used his hand to block a goal-bound shot in extra time. Asamoah Gyan hit the resulting penalty off the crossbar. Ghana never recovered.", attr: { name: "Ghana", flag: "🇬🇭", mgr: "Blaze Nugs" } },
+  { cat: "SOCCER HISTORY", text: "Canada's last World Cup appearance before 2022 was in 1986. They went 0-3 and didn't score a single goal. The 2022 squad was categorically different. This one may be better still.", attr: { name: "Canada", flag: "🇨🇦", mgr: "AK47" } },
+  { cat: "SOCCER HISTORY", text: "Iran beat the United States 2-1 in the 1998 World Cup in a match that was more geopolitical event than soccer game. One of the most charged 90 minutes in the sport's history.", attr: { name: "Iran", flag: "🇮🇷", mgr: "Pizza" } },
+  { cat: "SOCCER HISTORY", text: "Ivory Coast's golden generation — Drogba, Toure, Kalou — qualified for three consecutive World Cups and never got out of the group stage. They were drawn into the Group of Death every single time.", attr: { name: "Ivory Coast", flag: "🇨🇮", mgr: "PLang" } },
+  { cat: "SOCCER HISTORY", text: "Mexico has reached the Round of 16 in seven consecutive World Cups — the streak known as El Quinto Partido, the fifth game they never played. It finally ended in 2022.", attr: { name: "Mexico", flag: "🇲🇽", mgr: "PLang" } },
+  { cat: "SOCCER HISTORY", text: "Algeria won the 1990 African Cup of Nations and produced Zinedine Zidane — who chose to play for France. Algeria's loss. France's generational fortune.", attr: { name: "Algeria", flag: "🇩🇿", mgr: "Pizza" } },
+  { cat: "SOCCER HISTORY", text: "Australia's Tim Cahill headed goals with a ferocity completely disproportionate to Australia's general relationship with soccer. Their 2006 Round of 16 run remains the high watermark.", attr: { name: "Australia", flag: "🇦🇺", mgr: "Nate Dawg" } },
+  { cat: "SOCCER HISTORY", text: "Bosnia's first ever World Cup appearance was 2014. They qualified 20 years after the Dayton Agreement ended their civil war. That context belongs in every conversation about this team.", attr: { name: "Bosnia", flag: "🇧🇦", mgr: "AK47" } },
+  { cat: "SOCCER HISTORY", text: "Ecuador has qualified for four World Cups since 2002, producing Antonio Valencia and a generation of players who consistently punch above their weight.", attr: { name: "Ecuador", flag: "🇪🇨", mgr: "Nate Dawg" } },
+  { cat: "SOCCER HISTORY", text: "Jordan has never appeared in a World Cup before this one. The group stage itself is a historic achievement. Everything from here is a bonus.", attr: { name: "Jordan", flag: "🇯🇴", mgr: "Corbin" } },
+  { cat: "SOCCER HISTORY", text: "Panama played their first ever World Cup game in 2018. They lost to Belgium 3-0, England 6-1, and Tunisia 2-1. They showed up. That is the whole story.", attr: { name: "Panama", flag: "🇵🇦", mgr: "Corbin" } },
+  { cat: "SOCCER HISTORY", text: "South Africa hosted 2010. Vuvuzelas. Shakira. The first African World Cup. They went out in the group stage. Still the greatest party the sport has ever thrown.", attr: { name: "South Africa", flag: "🇿🇦", mgr: "Pizza" } },
+  { cat: "SOCCER HISTORY", text: "Uzbekistan has never appeared in a World Cup until now. Their squad plays in leagues most Europeans have never heard of. That is not necessarily a disadvantage.", attr: { name: "Uzbekistan", flag: "🇺🇿", mgr: "Corbin" } },
+
+  // ── CHIRPS ──
+  { cat: "SCOUTING REPORT", text: "AK47 drafted Spain, Colombia, Uruguay, and Canada in the first four rounds, then apparently got distracted and selected Scotland. Four elite teams and one historical support group for underachievement.", flags: "🇪🇸🇨🇴🇺🇾🇨🇦🏴󠁧󠁢󠁳󠁣󠁴󠁿🇨🇿🇧🇦🇨🇼", mgr: "AK47" },
+  { cat: "SCOUTING REPORT", text: "AK47 has Curacao 🇨🇼 — a Caribbean island with 160,000 people. The island is smaller than some golf courses in the United States. Bold pick. Truly bold.", flags: "🇪🇸🇨🇴🇺🇾🇨🇦🏴󠁧󠁢󠁳󠁣󠁴󠁿🇨🇿🇧🇦🇨🇼", mgr: "AK47" },
+  { cat: "SCOUTING REPORT", text: "AK47 owns Scotland 🏴󠁧󠁢󠁳󠁣󠁴󠁿 which has appeared in 8 World Cups and never advanced past the group stage. If you owned Scotland in your last fantasy pool, you probably also bought high and sold low in crypto.", flags: "🇪🇸🇨🇴🇺🇾🇨🇦🏴󠁧󠁢󠁳󠁣󠁴󠁿🇨🇿🇧🇦🇨🇼", mgr: "AK47" },
+  { cat: "SCOUTING REPORT", text: "PLang took England 🏴󠁧󠁢󠁥󠁮󠁧󠁿 with the confidence of someone who has never watched England in a major tournament. Bold. Brave. Historically unjustified.", flags: "🏴󠁧󠁢󠁥󠁮󠁧󠁿🇳🇴🇲🇽🇸🇪🇨🇮🇵🇾🇹🇳🇭🇹", mgr: "PLang" },
+  { cat: "SCOUTING REPORT", text: "PLang took Haiti 🇭🇹 knowing full well they haven't won a World Cup game since 1974. That is 52 years of vibes-based optimism. We respect the commitment to the bit.", flags: "🏴󠁧󠁢󠁥󠁮󠁧󠁿🇳🇴🇲🇽🇸🇪🇨🇮🇵🇾🇹🇳🇭🇹", mgr: "PLang" },
+  { cat: "SCOUTING REPORT", text: "PLang owns Paraguay 🇵🇾 who last made a quarterfinal in 2010 by playing the most aggressively defensive soccer ever witnessed. Three group stage draws. One knockout win in extra time. Then Spain ended it. PLang is betting this style comes back in fashion.", flags: "🏴󠁧󠁢󠁥󠁮󠁧󠁿🇳🇴🇲🇽🇸🇪🇨🇮🇵🇾🇹🇳🇭🇹", mgr: "PLang" },
+  { cat: "SCOUTING REPORT", text: "PLang described Erling Haaland as 'a pretty good player' with the energy of someone who has never watched Erling Haaland play soccer. He owns Norway. He will be fine. He does not deserve to be fine.", flags: "🏴󠁧󠁢󠁥󠁮󠁧󠁿🇳🇴🇲🇽🇸🇪🇨🇮🇵🇾🇹🇳🇭🇹", mgr: "PLang" },
+  { cat: "SCOUTING REPORT", text: "Blaze Nugs rolled France, Germany, and USA in the first three rounds, then grabbed Saudi Arabia 🇸🇦, Ghana 🇬🇭, Congo DR 🇨🇩, and New Zealand 🇳🇿. He drafted the defending champion, the host nation, and three countries whose fans are still finding the stadium on Google Maps.", flags: "🇫🇷🇩🇪🇺🇸🇹🇷🇸🇦🇬🇭🇨🇩🇳🇿", mgr: "Blaze Nugs" },
+  { cat: "SCOUTING REPORT", text: "Blaze Nugs owns New Zealand 🇳🇿 which qualified by being the best team in a confederation that once lost 31-0 to Australia. Perspective is everything when evaluating this pick.", flags: "🇫🇷🇩🇪🇺🇸🇹🇷🇸🇦🇬🇭🇨🇩🇳🇿", mgr: "Blaze Nugs" },
+  { cat: "SCOUTING REPORT", text: "Corbin grabbed Argentina 🇦🇷 and Belgium 🇧🇪 in the first two rounds, then picked Jordan 🇯🇴 — a team making its first ever World Cup appearance. There is the ceiling. There is the floor. Quite a range.", flags: "🇦🇷🇧🇪🇭🇷🇦🇹🇰🇷🇵🇦🇺🇿🇯🇴", mgr: "Corbin" },
+  { cat: "SCOUTING REPORT", text: "Corbin asked what 'nil' means during the last World Cup. He has since learned. He still occasionally says 'zero to zero' on purpose just to make people uncomfortable. He owns Argentina.", flags: "🇦🇷🇧🇪🇭🇷🇦🇹🇰🇷🇵🇦🇺🇿🇯🇴", mgr: "Corbin" },
+  { cat: "SCOUTING REPORT", text: "Corbin has Uzbekistan 🇺🇿 — one of only two doubly landlocked countries in the world. First World Cup ever. Corbin saw the name and thought it sounded fast. It does not sound fast. Uzbekistan is landlocked twice.", flags: "🇦🇷🇧🇪🇭🇷🇦🇹🇰🇷🇵🇦🇺🇿🇯🇴", mgr: "Corbin" },
+  { cat: "SCOUTING REPORT", text: "Pizza went Brazil 🇧🇷 and Portugal 🇵🇹 in the first two rounds — sensible, conservative, safe. Then he drafted Iran, Algeria, Iraq, and South Africa with the energy of someone who lost a side bet.", flags: "🇧🇷🇵🇹🇸🇳🇨🇭🇮🇷🇩🇿🇮🇶🇿🇦", mgr: "Pizza" },
+  { cat: "SCOUTING REPORT", text: "Pizza selected South Africa 🇿🇦 — the only host nation in World Cup history that failed to advance past the group stage in their own tournament. Pizza saw '2010 host' and stopped researching there.", flags: "🇧🇷🇵🇹🇸🇳🇨🇭🇮🇷🇩🇿🇮🇶🇿🇦", mgr: "Pizza" },
+  { cat: "SCOUTING REPORT", text: "Pizza called it a 'penalty kick shootout.' Not a shootout. Not penalty kicks. The full compound phrase. Every time. We have decided not to correct this going forward. He owns Brazil.", flags: "🇧🇷🇵🇹🇸🇳🇨🇭🇮🇷🇩🇿🇮🇶🇿🇦", mgr: "Pizza" },
+  { cat: "SCOUTING REPORT", text: "Nate Dawg took Netherlands 🇳🇱 and Morocco 🇲🇦 in the first two rounds and then drafted Cabo Verde 🇨🇻 — an archipelago of 10 islands with a total population of 600,000 — as his final pick. Somewhere in between lies hope.", flags: "🇳🇱🇲🇦🇯🇵🇪🇨🇪🇬🇦🇺🇶🇦🇨🇻", mgr: "Nate Dawg" },
+  { cat: "SCOUTING REPORT", text: "Nate Dawg referenced 'the World Cup bracket' in conversation. There is no bracket in the group stage. There is, however, a very complicated points table that Nate Dawg will not be reading.", flags: "🇳🇱🇲🇦🇯🇵🇪🇨🇪🇬🇦🇺🇶🇦🇨🇻", mgr: "Nate Dawg" },
+  { cat: "SCOUTING REPORT", text: "Nate Dawg owns Qatar 🇶🇦 — the previous host nation that crashed out of their own World Cup in the group stage, becoming the first host nation ever to do so. He saw the pattern in South Africa. He bought in anyway.", flags: "🇳🇱🇲🇦🇯🇵🇪🇨🇪🇬🇦🇺🇶🇦🇨🇻", mgr: "Nate Dawg" },
+
+  // ── GENERAL IGNORANCE ──
+  { cat: "SCOUTING REPORT", text: "One of these managers thought a false nine was a position created by someone who lied on their resume. It was not AK47. Probably.", flags: null, mgr: null },
+  { cat: "SCOUTING REPORT", text: "At least two people in this league Googled 'how does World Cup group stage scoring work' after the draft was complete. The survival point rule was a surprise to everyone.", flags: null, mgr: null },
+  { cat: "SCOUTING REPORT", text: "The offside rule was explained in the group chat four times. Three different explanations were offered. None of them were fully correct. The tournament starts Thursday.", flags: null, mgr: null },
+  { cat: "SCOUTING REPORT", text: "Someone in this league watched a full 90 minutes of group stage soccer and referred to it as 'the first half.' They will not be named. They know who they are.", flags: null, mgr: null },
+  { cat: "SCOUTING REPORT", text: "At least one manager drafted a team based entirely on the color of their jersey. Given the results, this may have been the correct methodology.", flags: null, mgr: null },
+  { cat: "SCOUTING REPORT", text: "At least one manager set their phone alarm for a 6am group stage game with full intention of watching it live. The alarm was snoozed. The game was watched via highlights at noon. The highlight reel did not include the goal that triggered a bonus point.", flags: null, mgr: null },
+
+  // ── NONSENSICAL ──
+  { cat: "BREAKING NEWS", text: "One of these managers irons their socks. Not relevant to the World Cup in any way. Just felt important to put on the record.", flags: null, mgr: null },
+  { cat: "BREAKING NEWS", text: "The group chat will have 47 messages the morning of the first game. 44 will be memes. Two will be incorrect score predictions. One will be a reminder about the Globle bonus that everyone ignores until they lose by one point.", flags: null, mgr: null },
+  { cat: "BREAKING NEWS", text: "Somewhere in this league is a man who has been to an Applebee's in the last 30 days and still believes he has a legitimate shot at winning. He is correct. The tournament is chaos.", flags: null, mgr: null },
+  { cat: "BREAKING NEWS", text: "Statistically, one person in this group has a strong opinion about pineapple on pizza. That opinion is wrong. So is their draft strategy.", flags: null, mgr: null },
+  { cat: "BREAKING NEWS", text: "If the World Cup were decided by group chat confidence alone, this league would be competing in the final at East Rutherford. As it stands, 48 countries have a say in the matter.", flags: null, mgr: null },
+  { cat: "BREAKING NEWS", text: "Nobody in this league has been to all three host countries simultaneously during a World Cup. This is either deeply relevant context or completely meaningless. Unclear which.", flags: null, mgr: null },
+  { cat: "BREAKING NEWS", text: "There will be one truly absurd own goal in this tournament. The manager who owns that team will not find it funny for approximately 72 hours and will then make it their entire personality.", flags: null, mgr: null },
+  { cat: "BREAKING NEWS", text: "One of these managers has a strong take about which World Cup host city is best and has not looked any of them up on a map.", flags: null, mgr: null },
+  { cat: "BREAKING NEWS", text: "The survival point rule — plus one just for playing — was added specifically so nobody feels bad about owning Curacao. It did not fully accomplish this goal.", flags: null, mgr: null },
+  { cat: "BREAKING NEWS", text: "A reminder that 104 games will be played over 39 days. Someone in this group will watch fewer than 4 of them and still have opinions about every result.", flags: null, mgr: null },
+
+  // ── GLOBLE ──
+  { cat: "GLOBLE BONUS 🌍", text: "If today's Globle answer is one of the 48 World Cup teams, the manager who owns that country gets a free +1 point. Check globle.com every morning. It takes 30 seconds and will absolutely matter in a close race.", flags: null, mgr: null },
+  { cat: "GLOBLE BONUS 🌍", text: "Globle is a geography guessing game where you guess countries and it tells you how close you are based on distance. When the daily answer lands on a World Cup nation, that manager cashes in. Open the app. Every day.", flags: null, mgr: null },
+];
+
+// Shuffle preserving rough category distribution
+function shuffleTicker(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+let tickerItems = shuffleTicker(TICKER_ITEMS);
+let tickerIndex = 0;
+let tickerInterval = null;
+let countdownInterval = null;
+
+function renderCountdown() {
+  updateCountdownTimer();
+  if (countdownInterval) clearInterval(countdownInterval);
+  countdownInterval = setInterval(updateCountdownTimer, 1000);
+  tickerItems = shuffleTicker(TICKER_ITEMS);
+  tickerIndex = 0;
+  renderTickerItem(false);
+  if (tickerInterval) clearInterval(tickerInterval);
+  tickerInterval = setInterval(() => nextTicker(true), 8000);
+  renderTickerDots();
+}
+
+function renderTickerItem(fade) {
+  const item = tickerItems[tickerIndex];
+  const card = document.getElementById('ticker-card');
+  const cat = document.getElementById('ticker-category');
+  const txt = document.getElementById('ticker-text');
+  const att = document.getElementById('ticker-attribution');
+  if (!card) return;
+
+  if (fade) {
+    card.classList.add('fading');
+    setTimeout(() => {
+      setTickerContent(item, cat, txt, att);
+      card.classList.remove('fading');
+    }, 500);
+  } else {
+    setTickerContent(item, cat, txt, att);
+  }
+  renderTickerDots();
+}
+
+function setTickerContent(item, cat, txt, att) {
+  cat.textContent = item.cat;
+  txt.textContent = item.text;
+
+  if (item.attr) {
+    // geo/soccer fact with country attribution
+    const mgr = item.attr.mgr;
+    att.innerHTML = `${item.attr.flag} <strong>${item.attr.name}</strong> &nbsp;·&nbsp; <span class="mgr-tag">Owned by ${mgr}</span>`;
+  } else if (item.flags !== undefined && item.flags !== null) {
+    // chirp with manager flags
+    att.innerHTML = `<span class="mgr-tag">${item.mgr}</span> &nbsp; ${item.flags}`;
+  } else if (item.mgr) {
+    att.innerHTML = `<span class="mgr-tag">${item.mgr}</span>`;
+  } else {
+    att.innerHTML = '';
+  }
+}
+
+function renderTickerDots() {
+  const dots = document.getElementById('ticker-dots');
+  if (!dots) return;
+  const total = Math.min(tickerItems.length, 12);
+  dots.innerHTML = Array.from({length: total}, (_, i) =>
+    `<div class="ticker-dot ${i === tickerIndex % total ? 'active' : ''}"></div>`
+  ).join('');
+}
+
+function nextTicker(auto) {
+  tickerIndex = (tickerIndex + 1) % tickerItems.length;
+  renderTickerItem(true);
+  if (!auto) {
+    if (tickerInterval) clearInterval(tickerInterval);
+    tickerInterval = setInterval(() => nextTicker(true), 8000);
+  }
+}
+
+function prevTicker() {
+  tickerIndex = (tickerIndex - 1 + tickerItems.length) % tickerItems.length;
+  renderTickerItem(true);
+  if (tickerInterval) clearInterval(tickerInterval);
+  tickerInterval = setInterval(() => nextTicker(true), 8000);
+}
+
+function renderDraftResults() {
+  const panel = document.getElementById('panel-draft');
+  const mgrs = state.managers.filter(Boolean);
+  if (!mgrs.length) {
+    panel.innerHTML = '<div class="section-title">Draft <span>Results</span></div><div class="empty-state"><span class="big">No Draft Yet</span></div>';
+    return;
+  }
+  let html = '<div class="section-title">Draft <span>Results</span></div><div class="draft-results-grid">';
+  mgrs.forEach(mgr => {
+    const teams = (state.picks[mgr] || []).map(name => ALL_TEAMS.find(t => t.name === name)).filter(Boolean);
+    teams.sort((a, b) => a.rank - b.rank);
+    html += `<div class="draft-mgr-card">
+      <div class="draft-mgr-name">${mgr}</div>
+      ${teams.map(t => `<div class="draft-team-row">
+        <span class="draft-team-flag">${t.flag}</span>
+        <span class="draft-team-name">${t.name}</span>
+        <span class="draft-team-group">Grp ${t.group}</span>
+        <span class="draft-team-rank">#${t.rank}</span>
+      </div>`).join('')}
+    </div>`;
+  });
+  html += '</div>';
+  panel.innerHTML = html;
+}
+
+
+
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 
 async function init() {
   await loadState();
   renderSetup();
-  renderDraft();
+  renderCountdown();
+  renderDraftResults();
   populateResultTeams();
   populateAwardSelects();
   renderResultLog();
