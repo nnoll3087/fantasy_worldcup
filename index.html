@@ -2739,6 +2739,11 @@ const TROPHY_DEFS = {
   champion:        { emoji: "🏆", name: "Champion",           desc: "Your team won the World Cup." },
   runnerUp:        { emoji: "🥈", name: "Runner Up",          desc: "Your team reached the World Cup Final." },
   woodenSpoon:     { emoji: "🥄", name: "Wooden Spoon",       desc: "Last place overall. Better luck in 4 years." },
+  firstEurope:     { emoji: "🏰", name: "European Opener",     desc: "First manager to win with a European team." },
+  firstSouthAm:    { emoji: "🌴", name: "South American Opener", desc: "First manager to win with a South American team." },
+  firstNorthAm:    { emoji: "🦅", name: "CONCACAF First",       desc: "First manager to win with a North/Central American or Caribbean team." },
+  firstAfrica:     { emoji: "🦁", name: "African Opener",       desc: "First manager to win with an African team." },
+  firstAsia:       { emoji: "🐉", name: "Asian Opener",         desc: "First manager to win with an Asian or Oceania team." },
 };
 
 const US_CITIES = ["inglewood","east rutherford","foxborough","houston","philadelphia","dallas","arlington","atlanta","kansas city","miami gardens","seattle"];
@@ -2785,6 +2790,15 @@ function calcTrophies(allScores) {
   let firstBloodMgr = null;
   let firstWallMgr = null;
   let firstUpsetMgr = null;
+  let firstEuropeMgr = null;
+  let firstSouthAmMgr = null;
+  let firstNorthAmMgr = null;
+  let firstAfricaMgr = null;
+  let firstAsiaMgr = null;
+
+  const CONFED = {
+    1: 'europe', 2: 'southam', 3: 'northam', 4: 'africa', 5: 'asia'
+  };
 
   // Track per-manager data
   const mgrData = {};
@@ -2842,6 +2856,17 @@ function calcTrophies(allScores) {
 
       // Upset
       if (r.upset && !firstUpsetMgr) firstUpsetMgr = mgr1;
+
+      // Confederation first wins
+      const winTeam = ALL_TEAMS.find(t => t.name === r.team1);
+      if (winTeam) {
+        const conf = CONTINENT_MAP[winTeam.name];
+        if (conf === 1 && !firstEuropeMgr) firstEuropeMgr = mgr1;
+        if (conf === 2 && !firstSouthAmMgr) firstSouthAmMgr = mgr1;
+        if (conf === 3 && !firstNorthAmMgr) firstNorthAmMgr = mgr1;
+        if (conf === 4 && !firstAfricaMgr) firstAfricaMgr = mgr1;
+        if (conf === 5 && !firstAsiaMgr) firstAsiaMgr = mgr1;
+      }
     }
 
     if (r.result === 'draw' && !r.globle && !r.isAdvance) {
@@ -2904,6 +2929,11 @@ function calcTrophies(allScores) {
   if (firstBloodMgr) trophies[firstBloodMgr].add('firstBlood');
   if (firstWallMgr) trophies[firstWallMgr].add('wall');
   if (firstUpsetMgr) trophies[firstUpsetMgr].add('giantKiller');
+  if (firstEuropeMgr) trophies[firstEuropeMgr].add('firstEurope');
+  if (firstSouthAmMgr) trophies[firstSouthAmMgr].add('firstSouthAm');
+  if (firstNorthAmMgr) trophies[firstNorthAmMgr].add('firstNorthAm');
+  if (firstAfricaMgr) trophies[firstAfricaMgr].add('firstAfrica');
+  if (firstAsiaMgr) trophies[firstAsiaMgr].add('firstAsia');
 
   // Per-manager awards
   mgrs.forEach(m => {
