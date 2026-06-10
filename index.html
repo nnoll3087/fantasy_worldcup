@@ -2924,27 +2924,23 @@ function calcTrophies(allScores) {
     if (d.runnerUp) trophies[m].add('runnerUp');
   });
 
-  // Competitive: hotStart (most week1 pts)
-  const maxWeek1 = Math.max(...mgrs.map(m => mgrData[m].week1Pts));
-  if (maxWeek1 > 0) {
-    mgrs.filter(m => mgrData[m].week1Pts === maxWeek1).forEach(m => trophies[m].add('hotStart'));
-  }
+  // hotStart handled in competitive section below
 
-  // Competitive: globleChamp (most globle pts)
-  const maxGloble = Math.max(...mgrs.map(m => mgrData[m].globleCount));
-  if (maxGloble > 0) {
-    mgrs.filter(m => mgrData[m].globleCount === maxGloble).forEach(m => trophies[m].add('globleChamp'));
-  }
+  // globleChamp handled in competitive section below
 
-  // Competitive: woodenSpoon (last place — only if tournament has started)
   const totalPtsArr = allScores.map(s => s.total);
-  const minPts = Math.min(...totalPtsArr);
   const maxPts = Math.max(...totalPtsArr);
-  if (maxPts > 0) { // only award once someone is scoring
+  const minPts = Math.min(...totalPtsArr);
+
+  // Count how many group stage games have been logged (non-globle, non-advance, non-awards)
+  const gamesLogged = state.results.filter(r => !r.globle && !r.isAdvance && !r.isAwards && r.stage === 'group').length;
+
+  // Wooden Spoon: only after all group stage games played (72 games) AND scores differ
+  if (gamesLogged >= 72 && maxPts > minPts) {
     allScores.filter(s => s.total === minPts).forEach(s => trophies[s.manager].add('woodenSpoon'));
   }
 
-  // Competitive: valuePick (pts / avg FIFA rank of your 8 teams)
+  // Value Pick: only after at least 24 group stage games (matchday 1 complete) AND scores differ
   const valueScores = mgrs.map(m => {
     const teams = picks[m] || [];
     const avgRank = teams.length ? teams.reduce((sum, t) => {
@@ -2955,26 +2951,54 @@ function calcTrophies(allScores) {
     return { m, ratio: avgRank > 0 ? pts / avgRank : 0 };
   });
   const maxValue = Math.max(...valueScores.map(v => v.ratio));
-  if (maxValue > 0) {
-    valueScores.filter(v => v.ratio === maxValue).forEach(v => trophies[v.m].add('valuePickTrophy'));
+  if (gamesLogged >= 24 && maxValue > 0) {
+    // Only award to one manager — the clear leader
+    const topValue = valueScores.filter(v => v.ratio === maxValue);
+    if (topValue.length === 1) topValue.forEach(v => trophies[v.m].add('valuePickTrophy'));
   }
 
-  // Competitive: biggestDud — manager whose highest-ranked (best) team has the fewest points
+  // Biggest Dud: only after matchday 1 (24+ games) AND the best team has actually played
+  // and their top pick has fewer points than expected
   const dudScores = mgrs.map(m => {
     const teams = picks[m] || [];
     const bestTeam = teams.reduce((best, t) => {
       const team = ALL_TEAMS.find(x => x.name === t);
       return team && (!best || team.rank < best.rank) ? team : best;
     }, null);
-    if (!bestTeam) return { m, dudScore: 0 };
+    if (!bestTeam) return { m, dudScore: Infinity, bestRank: 99 };
     const pts = allScores.find(s => s.manager === m)?.breakdown?.[bestTeam.name]?.pts || 0;
-    return { m, dudScore: pts, bestTeam: bestTeam.name, bestRank: bestTeam.rank };
+    // Check if their best team has actually played at least one game
+    const hasPlayed = state.results.some(r =>
+      !r.globle && !r.isAdvance && !r.isAwards &&
+      (r.team1 === bestTeam.name || r.team2 === bestTeam.name)
+    );
+    return { m, dudScore: pts, bestTeam: bestTeam.name, bestRank: bestTeam.rank, hasPlayed };
   });
-  // Only award if tournament has started and best team is in top 10
-  const eligibleDuds = dudScores.filter(d => d.bestRank <= 10 && maxPts > 0);
-  if (eligibleDuds.length) {
+  const eligibleDuds = dudScores.filter(d => d.bestRank <= 10 && d.hasPlayed);
+  if (eligibleDuds.length >= 2) { // need at least 2 eligible to compare
     const minDud = Math.min(...eligibleDuds.map(d => d.dudScore));
-    eligibleDuds.filter(d => d.dudScore === minDud).forEach(d => trophies[d.m].add('biggestDud'));
+    const maxDud = Math.max(...eligibleDuds.map(d => d.dudScore));
+    if (minDud < maxDud) { // only award if there's a clear underperformer
+      eligibleDuds.filter(d => d.dudScore === minDud).forEach(d => trophies[d.m].add('biggestDud'));
+    }
+  }
+
+  // Globle MVP: only if at least 2 managers have earned Globle points and scores differ
+  const maxGloble = Math.max(...mgrs.map(m => mgrData[m].globleCount));
+  const globleEarners = mgrs.filter(m => mgrData[m].globleCount > 0);
+  if (globleEarners.length >= 2 && maxGloble > 0) {
+    mgrs.filter(m => mgrData[m].globleCount === maxGloble).forEach(m => trophies[m].add('globleChamp'));
+  } else if (globleEarners.length === 1) {
+    // Only one person has Globle pts — don't award MVP yet, just the Globle badge
+  }
+
+  // Hot Start: only after week 1 ends (after June 18) AND scores differ
+  const now = new Date();
+  const week1Over = now > new Date('2026-06-18T23:59:59Z');
+  const maxWeek1 = Math.max(...mgrs.map(m => mgrData[m].week1Pts));
+  if (week1Over && maxWeek1 > 0) {
+    const week1Leaders = mgrs.filter(m => mgrData[m].week1Pts === maxWeek1);
+    if (week1Leaders.length === 1) week1Leaders.forEach(m => trophies[m].add('hotStart'));
   }
 
   return trophies;
