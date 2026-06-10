@@ -897,24 +897,73 @@
     </div>
 
     <div id="results-form-area" style="display:none;">
-      <div class="results-form">
-        <h3>Log a Match Result</h3>
-        <div class="result-row">
-          <div>
-            <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">Winner / Team 1</label>
-            <select id="res-team1"></select>
+
+      <!-- MATCH RESULT ENTRY -->
+      <div class="results-form" style="margin-bottom:1rem;">
+        <h3>Log a Group Stage Result</h3>
+        <div class="field" style="margin-bottom:1rem;">
+          <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">Select Game</label>
+          <select id="res-game-select" onchange="onGameSelect()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;width:100%;max-width:500px;">
+            <option value="">-- pick a game --</option>
+          </select>
+        </div>
+
+        <div id="res-game-detail" style="display:none;">
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:0.9rem 1rem;margin-bottom:1rem;">
+            <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:0.3rem;flex:1;min-width:120px;">
+                <div id="res-home-flag" style="font-size:2rem;"></div>
+                <div id="res-home-name" style="font-weight:600;font-size:0.9rem;text-align:center;"></div>
+                <div id="res-home-mgr" style="font-size:0.7rem;color:var(--green);"></div>
+                <input type="number" id="res-score-home" min="0" max="20" placeholder="0"
+                  style="width:64px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.5rem;color:var(--text);font-family:'Bebas Neue',sans-serif;font-size:1.8rem;outline:none;"
+                  oninput="onScoreChange()">
+                <button id="res-hat-home" class="btn-ghost" onclick="toggleHat('home')" style="font-size:0.72rem;padding:0.3rem 0.6rem;">🎩 Hat Trick</button>
+              </div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--muted);">VS</div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:0.3rem;flex:1;min-width:120px;">
+                <div id="res-away-flag" style="font-size:2rem;"></div>
+                <div id="res-away-name" style="font-weight:600;font-size:0.9rem;text-align:center;"></div>
+                <div id="res-away-mgr" style="font-size:0.7rem;color:var(--green);"></div>
+                <input type="number" id="res-score-away" min="0" max="20" placeholder="0"
+                  style="width:64px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.5rem;color:var(--text);font-family:'Bebas Neue',sans-serif;font-size:1.8rem;outline:none;"
+                  oninput="onScoreChange()">
+                <button id="res-hat-away" class="btn-ghost" onclick="toggleHat('away')" style="font-size:0.72rem;padding:0.3rem 0.6rem;">🎩 Hat Trick</button>
+              </div>
+            </div>
+            <div id="res-inferred" style="margin-top:0.75rem;font-size:0.78rem;color:var(--muted);text-align:center;min-height:1.2em;"></div>
           </div>
-          <div class="vs">VS</div>
-          <div>
-            <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">Loser / Team 2</label>
-            <select id="res-team2"></select>
+          <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;color:var(--muted);cursor:pointer;">
+              <input type="checkbox" id="res-upset-check" style="accent-color:var(--green);"> ⚡ Upset Bonus (+5)
+            </label>
+          </div>
+          <div style="margin-top:1rem;">
+            <button class="btn" onclick="logGroupResult()">Log Result</button>
           </div>
         </div>
-        <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+      </div>
+
+      <!-- GROUP STAGE ADVANCEMENT -->
+      <div class="results-form" style="margin-bottom:1rem;">
+        <h3>Group Stage Advancement</h3>
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">Award +3 pts to a team that advances from the group stage.</p>
+        <div style="display:flex;gap:0.75rem;align-items:flex-end;flex-wrap:wrap;">
+          <div class="field">
+            <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">Team</label>
+            <select id="res-advance-team" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;min-width:200px;"></select>
+          </div>
+          <button class="btn" onclick="logAdvance()">Award Advancement</button>
+        </div>
+      </div>
+
+      <!-- KNOCKOUT RESULT ENTRY -->
+      <div class="results-form" style="margin-bottom:1rem;">
+        <h3>Log a Knockout Result</h3>
+        <div style="display:flex;gap:0.75rem;align-items:flex-end;flex-wrap:wrap;margin-bottom:0.75rem;">
           <div class="field">
             <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">Stage</label>
-            <select id="res-stage">
-              <option value="group">Group Stage</option>
+            <select id="ko-stage" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;">
               <option value="r32">Round of 32</option>
               <option value="r16">Round of 16</option>
               <option value="qf">Quarterfinal</option>
@@ -923,54 +972,48 @@
             </select>
           </div>
           <div class="field">
-            <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">Result</label>
-            <select id="res-result">
-              <option value="win">Team 1 Wins</option>
-              <option value="draw">Draw</option>
-            </select>
+            <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">Winner</label>
+            <select id="ko-winner" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;min-width:160px;"></select>
           </div>
           <div class="field">
-            <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">Team 1 FIFA Ranking</label>
-            <input type="number" id="res-rank1" placeholder="e.g. 3" style="width:120px;" />
-          </div>
-          <div class="field">
-            <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">Team 2 FIFA Ranking</label>
-            <input type="number" id="res-rank2" placeholder="e.g. 28" style="width:120px;" />
+            <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">Loser</label>
+            <select id="ko-loser" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;min-width:160px;"></select>
           </div>
         </div>
-        <div class="result-options">
-          <label><input type="checkbox" id="res-clean1"> Team 1 Clean Sheet</label>
-          <label><input type="checkbox" id="res-clean2"> Team 2 Clean Sheet (draw)</label>
-          <label><input type="checkbox" id="res-hattrick1"> Hat Trick — Team 1</label>
-          <label><input type="checkbox" id="res-hattrick2"> Hat Trick — Team 2</label>
-          <label><input type="checkbox" id="res-advance1"> Team 1 Advances from Group</label>
-          <label><input type="checkbox" id="res-advance2"> Team 2 Advances from Group</label>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+          <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;color:var(--muted);cursor:pointer;"><input type="checkbox" id="ko-clean" style="accent-color:var(--green);"> Clean Sheet (winner)</label>
+          <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;color:var(--muted);cursor:pointer;"><input type="checkbox" id="ko-hat" style="accent-color:var(--green);"> Hat Trick (winner)</label>
+          <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;color:var(--muted);cursor:pointer;"><input type="checkbox" id="ko-upset" style="accent-color:var(--green);"> ⚡ Upset Bonus (+5)</label>
         </div>
-        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1rem;">
-          <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;color:var(--muted);cursor:pointer;">
-            <input type="checkbox" id="res-biggest-upset" style="accent-color:var(--green);"> Biggest Upset of Tournament (one-time +5)
-          </label>
-        </div>
-        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1rem;">
-          <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;color:var(--muted);cursor:pointer;">
-            <input type="checkbox" id="res-golden-boot"> Golden Boot:
-          </label>
-          <select id="res-golden-boot-team" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0.3rem 0.6rem;color:var(--text);font-size:0.82rem;outline:none;">
-            <option value="">-- select team --</option>
-          </select>
-          <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;color:var(--muted);cursor:pointer;">
-            <input type="checkbox" id="res-golden-glove"> Golden Glove:
-          </label>
-          <select id="res-golden-glove-team" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0.3rem 0.6rem;color:var(--text);font-size:0.82rem;outline:none;">
-            <option value="">-- select team --</option>
-          </select>
-        </div>
-        <button class="btn" onclick="logResult()">Log Result</button>
+        <button class="btn" onclick="logKnockoutResult()">Log Knockout Result</button>
       </div>
 
+      <!-- END OF TOURNAMENT AWARDS -->
+      <div class="results-form" style="margin-bottom:1rem;">
+        <h3>End of Tournament Awards</h3>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+          <div class="field">
+            <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">⚽ Golden Boot</label>
+            <select id="award-golden-boot" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;min-width:160px;"></select>
+          </div>
+          <div class="field">
+            <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">🧤 Golden Glove</label>
+            <select id="award-golden-glove" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;min-width:160px;"></select>
+          </div>
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;color:var(--muted);cursor:pointer;">
+            <input type="checkbox" id="award-biggest-upset" style="accent-color:var(--green);"> 🏆 Biggest Upset of Tournament (+10) — select the winning team:
+          </label>
+          <select id="award-biggest-upset-team" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;min-width:200px;margin-top:0.5rem;"></select>
+        </div>
+        <button class="btn" onclick="logAwards()">Log Awards</button>
+      </div>
+
+      <!-- GLOBLE -->
       <div class="results-form" style="margin-bottom:1.5rem;">
         <h3>🌍 Daily Globle Bonus</h3>
-        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem;">If today's Globle answer is a World Cup team, that manager gets +1 pt. Award it once per day.</p>
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem;">If today's Globle answer is a World Cup team, that manager gets +1 pt.</p>
         <div style="display:flex;gap:0.75rem;align-items:flex-end;flex-wrap:wrap;">
           <div class="field">
             <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">Today's Globle Country</label>
@@ -980,7 +1023,7 @@
         </div>
       </div>
 
-      <div class="results-log">
+            <div class="results-log">
         <h3>Match Log</h3>
         <div id="results-log-list"></div>
       </div>
@@ -1092,7 +1135,7 @@
 <script>
 // ─── DATA ───────────────────────────────────────────────────────────────────
 
-const ADMIN_PASSWORD = "wcfantasy2026";
+const ADMIN_PASSWORD = "wcf26";
 
 const ALL_TEAMS = [
   // Group A
@@ -1406,16 +1449,16 @@ function calcPoints(manager) {
   teams.forEach(t => { breakdown[t] = { pts: 0, detail: [] }; });
 
   state.results.forEach(r => {
-    // Survival point for both teams (not for Globle entries)
-    if (!r.globle && teams.includes(r.team1)) {
+    // Survival point for both teams (not for Globle/advance/awards entries)
+    if (!r.globle && !r.isAdvance && !r.isAwards && teams.includes(r.team1)) {
       breakdown[r.team1].pts += 1;
       breakdown[r.team1].detail.push("Survival +1");
     }
-    if (!r.globle && r.result === 'draw' && teams.includes(r.team2)) {
+    if (!r.globle && !r.isAdvance && !r.isAwards && r.result === 'draw' && teams.includes(r.team2)) {
       breakdown[r.team2].pts += 1;
       breakdown[r.team2].detail.push("Survival +1");
     }
-    if (!r.globle && r.result === 'win' && teams.includes(r.team2)) {
+    if (!r.globle && !r.isAdvance && !r.isAwards && r.result === 'win' && teams.includes(r.team2)) {
       breakdown[r.team2].pts += 1;
       breakdown[r.team2].detail.push("Survival +1");
     }
@@ -1443,10 +1486,12 @@ function calcPoints(manager) {
 
     // Advance from group
     if (r.advance1 && teams.includes(r.team1)) {
+      if (!breakdown[r.team1]) breakdown[r.team1] = { pts: 0, detail: [] };
       breakdown[r.team1].pts += 3;
       breakdown[r.team1].detail.push("Advance +3");
     }
     if (r.advance2 && teams.includes(r.team2)) {
+      if (!breakdown[r.team2]) breakdown[r.team2] = { pts: 0, detail: [] };
       breakdown[r.team2].pts += 3;
       breakdown[r.team2].detail.push("Advance +3");
     }
@@ -1558,6 +1603,9 @@ function checkAdmin() {
     state.adminUnlocked = true;
     document.getElementById('admin-status').textContent = '✓ Unlocked';
     document.getElementById('results-form-area').style.display = 'block';
+    populateGameSelect();
+    populateTeamSelects();
+    renderResultLog();
   } else {
     toast("Wrong password");
   }
@@ -1568,18 +1616,188 @@ function renderResultsPanel() {
     document.getElementById('results-form-area').style.display = 'block';
     document.getElementById('admin-status').textContent = '✓ Unlocked';
   }
-  populateResultTeams();
-  populateAwardSelects();
-  populateGlobleSelect();
+  populateGameSelect();
+  populateTeamSelects();
   renderResultLog();
 }
 
-function populateGlobleSelect() {
-  const sel = document.getElementById('globle-team');
+function populateGameSelect() {
+  const sel = document.getElementById('res-game-select');
   if (!sel) return;
-  const opts = '<option value="">-- select country --</option>' +
+  // Only group stage games that haven't been logged yet
+  const played = state.results
+    .filter(r => !r.globle && r.stage === 'group')
+    .map(r => r.team1 + '|' + r.team2);
+  const available = GROUP_SCHEDULE.filter(g => {
+    const key1 = g.home + '|' + g.away;
+    const key2 = g.away + '|' + g.home;
+    return !played.includes(key1) && !played.includes(key2);
+  });
+  const hf = ALL_TEAMS.reduce((m, t) => { m[t.name] = t.flag; return m; }, {});
+  sel.innerHTML = '<option value="">-- pick a game --</option>' +
+    available.map((g, i) => {
+      const d = formatGameDate(g.date);
+      return `<option value="${i}:${g.home}:${g.away}:${g.date}:${g.time}">${hf[g.home]||''} ${g.home} vs ${g.away} ${hf[g.away]||''} · ${d.month} ${d.day} ${g.time}</option>`;
+    }).join('');
+}
+
+function onGameSelect() {
+  const sel = document.getElementById('res-game-select');
+  const detail = document.getElementById('res-game-detail');
+  if (!sel.value) { detail.style.display = 'none'; return; }
+  const [,home,away] = sel.value.split(':');
+  const hTeam = ALL_TEAMS.find(t => t.name === home);
+  const aTeam = ALL_TEAMS.find(t => t.name === away);
+  document.getElementById('res-home-flag').textContent = hTeam?.flag || '';
+  document.getElementById('res-home-name').textContent = home;
+  document.getElementById('res-home-mgr').textContent = getManagerForTeam(home) || 'Unowned';
+  document.getElementById('res-away-flag').textContent = aTeam?.flag || '';
+  document.getElementById('res-away-name').textContent = away;
+  document.getElementById('res-away-mgr').textContent = getManagerForTeam(away) || 'Unowned';
+  document.getElementById('res-score-home').value = '';
+  document.getElementById('res-score-away').value = '';
+  document.getElementById('res-inferred').textContent = '';
+  document.getElementById('res-hat-home').classList.remove('active-hat');
+  document.getElementById('res-hat-away').classList.remove('active-hat');
+  document.getElementById('res-hat-home').style.borderColor = '';
+  document.getElementById('res-away-mgr').style.color = 'var(--green)';
+  document.getElementById('res-upset-check').checked = false;
+  detail.style.display = 'block';
+}
+
+function onScoreChange() {
+  const h = parseInt(document.getElementById('res-score-home').value);
+  const a = parseInt(document.getElementById('res-score-away').value);
+  const inf = document.getElementById('res-inferred');
+  if (isNaN(h) || isNaN(a)) { inf.textContent = ''; return; }
+  const home = document.getElementById('res-home-name').textContent;
+  const away = document.getElementById('res-away-name').textContent;
+  if (h > a) inf.textContent = `✓ ${home} wins · ${a === 0 ? home + ' clean sheet' : 'no clean sheet'}`;
+  else if (a > h) inf.textContent = `✓ ${away} wins · ${h === 0 ? away + ' clean sheet' : 'no clean sheet'}`;
+  else inf.textContent = `✓ Draw · ${h === 0 ? 'Double clean sheet' : 'No clean sheets'}`;
+}
+
+let hatTricks = { home: false, away: false };
+
+function toggleHat(side) {
+  hatTricks[side] = !hatTricks[side];
+  const btn = document.getElementById(side === 'home' ? 'res-hat-home' : 'res-hat-away');
+  btn.style.borderColor = hatTricks[side] ? 'var(--gold)' : '';
+  btn.style.color = hatTricks[side] ? 'var(--gold)' : '';
+}
+
+async function logGroupResult() {
+  const sel = document.getElementById('res-game-select');
+  if (!sel.value) return toast("Select a game first");
+  const parts = sel.value.split(':');
+  const home = parts[1], away = parts[2];
+  const scoreH = parseInt(document.getElementById('res-score-home').value);
+  const scoreA = parseInt(document.getElementById('res-score-away').value);
+  if (isNaN(scoreH) || isNaN(scoreA)) return toast("Enter both scores");
+
+  const result = scoreH > scoreA ? 'win' : scoreH < scoreA ? 'win' : 'draw';
+  const team1 = scoreH >= scoreA ? home : away; // team1 = winner or home if draw
+  const team2 = scoreH >= scoreA ? away : home;
+  const actualScoreT1 = team1 === home ? scoreH : scoreA;
+  const actualScoreT2 = team1 === home ? scoreA : scoreH;
+
+  const clean1 = actualScoreT2 === 0;
+  const clean2 = result === 'draw' && actualScoreT1 === 0;
+  const hattrick1 = team1 === home ? hatTricks.home : hatTricks.away;
+  const hattrick2 = team2 === home ? hatTricks.home : hatTricks.away;
+  const upset = document.getElementById('res-upset-check').checked;
+
+  const hRank = getRankForTeam(home);
+  const aRank = getRankForTeam(away);
+
+  const entry = {
+    team1, team2, stage: 'group', result,
+    rank1: team1 === home ? hRank : aRank,
+    rank2: team1 === home ? aRank : hRank,
+    clean1, clean2, hattrick1, hattrick2,
+    advance1: false, advance2: false,
+    upset, biggestUpset: false,
+    goldenBoot: null, goldenGlove: null
+  };
+
+  const res = await api("logResult", { result: entry });
+  if (res?.ok) {
+    hatTricks = { home: false, away: false };
+    toast(`Result logged!`);
+    populateGameSelect();
+    document.getElementById('res-game-select').value = '';
+    document.getElementById('res-game-detail').style.display = 'none';
+    renderResultLog();
+  }
+}
+
+async function logAdvance() {
+  const team = document.getElementById('res-advance-team').value;
+  if (!team) return toast("Select a team");
+  // Log as a special advance entry
+  const entry = {
+    team1: team, team2: '', stage: 'group', result: 'advance',
+    rank1: null, rank2: null, clean1: false, clean2: false,
+    hattrick1: false, hattrick2: false,
+    advance1: true, advance2: false,
+    upset: false, biggestUpset: false,
+    goldenBoot: null, goldenGlove: null,
+    isAdvance: true
+  };
+  const res = await api("logResult", { result: entry });
+  if (res?.ok) { toast(`${team} advancement logged (+3)`); renderResultLog(); }
+}
+
+async function logKnockoutResult() {
+  const stage = document.getElementById('ko-stage').value;
+  const winner = document.getElementById('ko-winner').value;
+  const loser = document.getElementById('ko-loser').value;
+  if (!winner || !loser || winner === loser) return toast("Select winner and loser");
+  const clean1 = document.getElementById('ko-clean').checked;
+  const hat1 = document.getElementById('ko-hat').checked;
+  const upset = document.getElementById('ko-upset').checked;
+  const wRank = getRankForTeam(winner);
+  const lRank = getRankForTeam(loser);
+  const entry = {
+    team1: winner, team2: loser, stage, result: 'win',
+    rank1: wRank, rank2: lRank,
+    clean1, clean2: false, hattrick1: hat1, hattrick2: false,
+    advance1: false, advance2: false,
+    upset, biggestUpset: false,
+    goldenBoot: null, goldenGlove: null
+  };
+  const res = await api("logResult", { result: entry });
+  if (res?.ok) { toast("Knockout result logged!"); renderResultLog(); }
+}
+
+async function logAwards() {
+  const boot = document.getElementById('award-golden-boot').value;
+  const glove = document.getElementById('award-golden-glove').value;
+  const biggestUpset = document.getElementById('award-biggest-upset').checked;
+  const biggestUpsetTeam = document.getElementById('award-biggest-upset-team').value;
+  if (!boot && !glove && !biggestUpset) return toast("Nothing selected to award");
+  if (biggestUpset && state.biggestUpsetUsed) return toast("Biggest Upset already awarded!");
+
+  const entry = {
+    team1: biggestUpsetTeam || boot || glove, team2: '', stage: 'final', result: 'awards',
+    rank1: null, rank2: null, clean1: false, clean2: false,
+    hattrick1: false, hattrick2: false, advance1: false, advance2: false,
+    upset: false, biggestUpset,
+    goldenBoot: boot || null,
+    goldenGlove: glove || null,
+    isAwards: true
+  };
+  const res = await api("logResult", { result: entry });
+  if (res?.ok) { toast("Awards logged!"); renderResultLog(); }
+}
+
+function populateTeamSelects() {
+  const opts = '<option value="">-- select --</option>' +
     ALL_TEAMS.map(t => `<option value="${t.name}">${t.flag} ${t.name}</option>`).join('');
-  sel.innerHTML = opts;
+  ['award-golden-boot','award-golden-glove','award-biggest-upset-team','res-advance-team','ko-winner','ko-loser','globle-team'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = opts;
+  });
 }
 
 async function logGloble() {
@@ -1658,7 +1876,29 @@ function renderResultLog() {
   }
   const stageLabel = { group:'Group Stage', r32:'R32', r16:'R16', qf:'QF', sf:'SF', final:'Final' };
   log.innerHTML = [...state.results].reverse().map(r => {
-    // Globle entry — render differently
+    // Special entries
+    if (r.isAdvance) {
+      const flag = ALL_TEAMS.find(t => t.name === r.team1)?.flag || '';
+      const mgr = getManagerForTeam(r.team1);
+      return `<div class="result-entry">
+        <div class="re-match">⬆️ Advance: ${flag} ${r.team1}</div>
+        <div class="re-stage">Group Stage</div>
+        <div class="re-pts" style="flex:2;color:var(--gold);">+3 → ${mgr || 'Unowned'}</div>
+        <button class="re-del" onclick="deleteResult(${r.id})">✕</button>
+      </div>`;
+    }
+    if (r.isAwards) {
+      const parts = [];
+      if (r.goldenBoot) parts.push(`⚽ Golden Boot: ${r.goldenBoot}`);
+      if (r.goldenGlove) parts.push(`🧤 Golden Glove: ${r.goldenGlove}`);
+      if (r.biggestUpset) parts.push(`🏆 Biggest Upset: ${r.team1}`);
+      return `<div class="result-entry">
+        <div class="re-match">🏅 Awards</div>
+        <div class="re-stage">Final</div>
+        <div class="re-pts" style="flex:2;color:var(--gold);">${parts.join(' · ')}</div>
+        <button class="re-del" onclick="deleteResult(${r.id})">✕</button>
+      </div>`;
+    }
     if (r.globle) {
       const mgr = getManagerForTeam(r.team1);
       const flag = ALL_TEAMS.find(t => t.name === r.team1)?.flag || '🌍';
@@ -2015,7 +2255,7 @@ function renderPastResults() {
 
     function teamPtsFromResult(teamName, isTeam1) {
       let pts = 0; const detail = [];
-      if (!r.globle) { pts += 1; detail.push('Survival +1'); }
+      if (!r.globle && !r.isAdvance && !r.isAwards) { pts += 1; detail.push('Survival +1'); }
       if (r.result === 'win' && isTeam1) { const sp = pointsAtStake(r.stage); pts += sp; detail.push(`Win +${sp}`); }
       if (r.result === 'win' && !isTeam1 && r.stage === 'final') { pts += 13; detail.push('Runner-up +13'); }
       if (r.result === 'draw') { pts += 1; detail.push('Draw +1'); }
@@ -2076,7 +2316,7 @@ function calcTeamPoints(teamName) {
     const isT1 = r.team1 === teamName;
     const isT2 = r.team2 === teamName;
     if (!isT1 && !isT2) return;
-    if (!r.globle) { pts += 1; detail.push('Survival +1'); }
+    if (!r.globle && !r.isAdvance && !r.isAwards) { pts += 1; detail.push('Survival +1'); }
     if (r.result === 'win' && isT1) { const sp = pointsAtStake(r.stage); pts += sp; detail.push(`Win +${sp}`); }
     if (r.result === 'win' && isT2 && r.stage === 'final') { pts += 13; detail.push('Runner-up +13'); }
     if (r.result === 'draw') { pts += 1; detail.push('Draw +1'); }
