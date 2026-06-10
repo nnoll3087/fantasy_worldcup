@@ -1406,16 +1406,16 @@ function calcPoints(manager) {
   teams.forEach(t => { breakdown[t] = { pts: 0, detail: [] }; });
 
   state.results.forEach(r => {
-    // Survival point for both teams
-    if (teams.includes(r.team1)) {
+    // Survival point for both teams (not for Globle entries)
+    if (!r.globle && teams.includes(r.team1)) {
       breakdown[r.team1].pts += 1;
       breakdown[r.team1].detail.push("Survival +1");
     }
-    if (r.result === 'draw' && teams.includes(r.team2)) {
+    if (!r.globle && r.result === 'draw' && teams.includes(r.team2)) {
       breakdown[r.team2].pts += 1;
       breakdown[r.team2].detail.push("Survival +1");
     }
-    if (r.result === 'win' && teams.includes(r.team2)) {
+    if (!r.globle && r.result === 'win' && teams.includes(r.team2)) {
       breakdown[r.team2].pts += 1;
       breakdown[r.team2].detail.push("Survival +1");
     }
@@ -2015,7 +2015,7 @@ function renderPastResults() {
 
     function teamPtsFromResult(teamName, isTeam1) {
       let pts = 0; const detail = [];
-      pts += 1; detail.push('Survival +1');
+      if (!r.globle) { pts += 1; detail.push('Survival +1'); }
       if (r.result === 'win' && isTeam1) { const sp = pointsAtStake(r.stage); pts += sp; detail.push(`Win +${sp}`); }
       if (r.result === 'win' && !isTeam1 && r.stage === 'final') { pts += 13; detail.push('Runner-up +13'); }
       if (r.result === 'draw') { pts += 1; detail.push('Draw +1'); }
@@ -2076,7 +2076,7 @@ function calcTeamPoints(teamName) {
     const isT1 = r.team1 === teamName;
     const isT2 = r.team2 === teamName;
     if (!isT1 && !isT2) return;
-    pts += 1; detail.push('Survival +1');
+    if (!r.globle) { pts += 1; detail.push('Survival +1'); }
     if (r.result === 'win' && isT1) { const sp = pointsAtStake(r.stage); pts += sp; detail.push(`Win +${sp}`); }
     if (r.result === 'win' && isT2 && r.stage === 'final') { pts += 13; detail.push('Runner-up +13'); }
     if (r.result === 'draw') { pts += 1; detail.push('Draw +1'); }
