@@ -2265,7 +2265,7 @@ function renderPastResults() {
     return;
   }
 
-  container.innerHTML = [...state.results].reverse().map(r => {
+  container.innerHTML = [...state.results].filter(r => !r.globle).reverse().map(r => {
     const homeFlag = ALL_TEAMS.find(t => t.name === r.team1)?.flag || '';
     const awayFlag = ALL_TEAMS.find(t => t.name === r.team2)?.flag || '';
     const homeMgr = getManagerForTeam(r.team1);
