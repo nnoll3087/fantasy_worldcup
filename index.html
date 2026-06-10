@@ -340,6 +340,54 @@
   .lb-team-name { flex: 1; font-weight: 500; }
   .lb-team-pts { color: var(--green); font-weight: 600; min-width: 50px; text-align: right; }
   .lb-team-breakdown { color: var(--muted); font-size: 0.75rem; flex: 2; }
+  /* TROPHY SYSTEM */
+  .trophy-row {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    padding: 0.6rem 1.25rem;
+    border-top: 1px solid var(--border);
+    background: transparent;
+  }
+  .trophy-badge {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.22rem 0.5rem;
+    font-size: 0.75rem;
+    color: var(--gold);
+    cursor: pointer;
+    user-select: none;
+    transition: border-color 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .trophy-badge:hover { border-color: var(--gold); }
+  .trophy-badge .trophy-label { font-size: 0.72rem; }
+  .trophy-tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 0;
+    background: #1a2b1e;
+    border: 1px solid var(--gold);
+    border-radius: 8px;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.72rem;
+    color: var(--text);
+    white-space: nowrap;
+    z-index: 100;
+    min-width: 180px;
+    max-width: 240px;
+    white-space: normal;
+    line-height: 1.4;
+    pointer-events: none;
+  }
+  .trophy-badge.open .trophy-tooltip { display: block; }
+  /* Bonus tags kept for other uses */
   .lb-bonus-row {
     margin-top: 0.75rem;
     padding-top: 0.75rem;
@@ -1560,6 +1608,9 @@ function renderLeaderboard() {
   const scores = mgrs.map(m => ({ manager: m, ...calcPoints(m) }));
   scores.sort((a, b) => b.total - a.total);
 
+  // Calculate trophies for all managers at once
+  const allTrophies = calcTrophies(scores);
+
   lb.innerHTML = scores.map((s, i) => {
     const teams = state.picks[s.manager] || [];
     const teamRows = teams.map(t => {
@@ -1571,19 +1622,19 @@ function renderLeaderboard() {
       </div>`;
     }).join('');
 
-    const bonusTags = s.bonuses.length ? `<div class="lb-bonus-row">${s.bonuses.map(b=>`<span class="bonus-tag">${b}</span>`).join('')}</div>` : '';
+    const trophyBadges = renderTrophyBadges(allTrophies[s.manager]);
 
-    return `<div class="lb-card rank-${i+1}" onclick="toggleExpand(this)">
-      <div class="lb-header">
+    return `<div class="lb-card rank-${i+1}">
+      <div class="lb-header" onclick="toggleExpand(this.parentElement)">
         <div class="lb-rank">${i+1}</div>
         <div class="lb-name">${s.manager}</div>
         <div class="lb-teams-preview">${teams.map(t=>ALL_TEAMS.find(x=>x.name===t)?.flag||'').join(' ')}</div>
         <div class="lb-pts">${s.total}<span> pts</span></div>
         <div class="lb-expand">▾</div>
       </div>
+      ${trophyBadges}
       <div class="lb-detail">
         <div class="lb-team-rows">${teamRows || '<div style="color:var(--muted);font-size:0.85rem;">No teams drafted yet</div>'}</div>
-        ${bonusTags}
       </div>
     </div>`;
   }).join('');
@@ -1591,6 +1642,10 @@ function renderLeaderboard() {
 
 function toggleExpand(card) {
   card.classList.toggle('expanded');
+  // Re-close any open trophy tooltips when collapsing
+  if (!card.classList.contains('expanded')) {
+    card.querySelectorAll('.trophy-badge.open').forEach(b => b.classList.remove('open'));
+  }
 }
 
 // ─── RESULTS ─────────────────────────────────────────────────────────────────
@@ -2658,6 +2713,297 @@ function renderDraftResults() {
 }
 
 
+
+
+// ─── TROPHY ENGINE ────────────────────────────────────────────────────────────
+
+const TROPHY_DEFS = {
+  firstBlood:      { emoji: "🩸", name: "First Blood",       desc: "First manager to score any points in the tournament." },
+  wall:            { emoji: "🧱", name: "The Wall",           desc: "First manager to record a clean sheet." },
+  giantKiller:     { emoji: "⚡", name: "Giant Killer",       desc: "First manager to land an upset win (15+ ranking spots)." },
+  hatTrick:        { emoji: "🎩", name: "Hat Trick Hero",     desc: "One of your teams had a player score a hat trick." },
+  globle:          { emoji: "🌍", name: "Globle",             desc: "Earned the daily Globle bonus point." },
+  madeInAmerica:   { emoji: "🏟️", name: "Made in America",   desc: "Won a match played in a US host city." },
+  vivaMexico:      { emoji: "🌮", name: "Viva Mexico",        desc: "Won a match played in a Mexican host city." },
+  oCanada:         { emoji: "🍁", name: "O Canada",           desc: "Won a match played in a Canadian host city." },
+  qualified:       { emoji: "✅", name: "Qualified",          desc: "Got your first team through to the knockout stage." },
+  darkHorse:       { emoji: "🐴", name: "Dark Horse",         desc: "Advanced a team ranked outside the top 30." },
+  passport:        { emoji: "🌐", name: "Passport Stamp",     desc: "Advanced teams from 3 or more different continents." },
+  dominant:        { emoji: "💪", name: "Dominant",           desc: "Had a team win all 3 group stage games." },
+  worldTraveler:   { emoji: "🌎", name: "World Traveler",     desc: "Won matches in all 3 host countries (USA, Mexico, Canada)." },
+  groupCollector:  { emoji: "🗂️", name: "Group Collector",   desc: "Advanced teams from 3 or more different groups." },
+  hotStart:        { emoji: "🔥", name: "Hot Start",          desc: "Most points earned in the first 7 days of the tournament." },
+  globleChamp:     { emoji: "🗺️", name: "Globle MVP",        desc: "Most total Globle bonus points earned." },
+  valuePickTrophy: { emoji: "💸", name: "Value Pick",         desc: "Highest points-per-average-FIFA-rank ratio. Smartest draft." },
+  biggestDud:      { emoji: "🪣", name: "Biggest Dud",        desc: "Highest draft pick (best ranked team) with the least points. Ouch." },
+  champion:        { emoji: "🏆", name: "Champion",           desc: "Your team won the World Cup." },
+  runnerUp:        { emoji: "🥈", name: "Runner Up",          desc: "Your team reached the World Cup Final." },
+  woodenSpoon:     { emoji: "🥄", name: "Wooden Spoon",       desc: "Last place overall. Better luck in 4 years." },
+};
+
+const US_CITIES = ["inglewood","east rutherford","foxborough","houston","philadelphia","dallas","arlington","atlanta","kansas city","miami gardens","seattle"];
+const MX_CITIES = ["mexico city","zapopan","guadalupe","monterrey"];
+const CA_CITIES = ["toronto","vancouver"];
+
+const CONTINENT_MAP = {
+  // Europe
+  Spain:1, France:1, Germany:1, England:1, Netherlands:1, Portugal:1, Belgium:1,
+  Croatia:1, Austria:1, Switzerland:1, Norway:1, Sweden:1, Denmark:1, Scotland:1,
+  Czechia:1, Bosnia:1, Ukraine:1, Serbia:1, Albania:1, Georgia:1, Turkey:1, Turkiye:1,
+  // South America
+  Brazil:2, Argentina:2, Colombia:2, Uruguay:2, Ecuador:2, Paraguay:2, Venezuela:2, Chile:2, Peru:2,
+  // North/Central America & Caribbean
+  USA:3, Mexico:3, Canada:3, Panama:3, Haiti:3, Jamaica:3, Honduras:3, "Costa Rica":3, Curacao:3,
+  // Africa
+  Morocco:4, Senegal:4, Ghana:4, "Ivory Coast":4, "Congo DR":4, "South Africa":4,
+  Egypt:4, Tunisia:4, Algeria:4, Nigeria:4, Cameroon:4, Mali:4, "Cabo Verde":4, "Cape Verde":4,
+  // Asia/Middle East
+  Japan:5, "Korea Republic":5, "South Korea":5, Iran:5, "IR Iran":5, "Saudi Arabia":5,
+  Australia:5, Qatar:5, Iraq:5, Jordan:5, Uzbekistan:5,
+  // Oceania (grouped with Asia/Pacific)
+  "New Zealand":5,
+};
+
+function calcTrophies(allScores) {
+  // allScores: [{manager, total, breakdown, bonuses}]
+  const mgrs = allScores.map(s => s.manager);
+  const trophies = {}; // manager -> Set of trophy keys
+  mgrs.forEach(m => { trophies[m] = new Set(); });
+
+  const results = state.results;
+  const picks = state.picks;
+
+  // Helper
+  const owned = (team) => {
+    for (const [m, teams] of Object.entries(picks)) {
+      if (teams.includes(team)) return m;
+    }
+    return null;
+  };
+
+  // Track first-ever occurrences
+  let firstBloodMgr = null;
+  let firstWallMgr = null;
+  let firstUpsetMgr = null;
+
+  // Track per-manager data
+  const mgrData = {};
+  mgrs.forEach(m => {
+    mgrData[m] = {
+      wins: [], cleanSheets: 0, hatTricks: 0, globleCount: 0,
+      usCityWins: 0, mxCityWins: 0, caCityWins: 0,
+      advancedTeams: [], winsPerTeam: {}, totalPts: 0,
+      week1Pts: 0, advancedGroups: new Set(), advancedContinents: new Set(),
+    };
+  });
+
+  // Process results chronologically
+  results.forEach(r => {
+    const mgr1 = owned(r.team1);
+    const mgr2 = r.team2 ? owned(r.team2) : null;
+
+    // Points total (from allScores)
+    // Globle
+    if (r.globle && mgr1) {
+      mgrData[mgr1].globleCount++;
+    }
+
+    // Advancement
+    if (r.isAdvance && mgr1) {
+      const team = ALL_TEAMS.find(t => t.name === r.team1);
+      mgrData[mgr1].advancedTeams.push(r.team1);
+      if (team) {
+        mgrData[mgr1].advancedGroups.add(team.group);
+        const continent = CONTINENT_MAP[r.team1] || 0;
+        if (continent) mgrData[mgr1].advancedContinents.add(continent);
+      }
+    }
+
+    if (r.result === 'win' && mgr1 && !r.isAdvance && !r.isAwards && !r.globle) {
+      mgrData[mgr1].wins.push(r);
+
+      // First blood
+      if (!firstBloodMgr) firstBloodMgr = mgr1;
+
+      // Track wins per team
+      if (!mgrData[mgr1].winsPerTeam[r.team1]) mgrData[mgr1].winsPerTeam[r.team1] = 0;
+      mgrData[mgr1].winsPerTeam[r.team1]++;
+
+      // Host city wins
+      const venue = (r.venue || '').toLowerCase();
+      const game = ALL_SCHEDULE.find(g =>
+        (g.home === r.team1 && g.away === r.team2) ||
+        (g.home === r.team2 && g.away === r.team1)
+      );
+      const city = (game?.venue || r.venue || '').toLowerCase();
+      if (US_CITIES.some(c => city.includes(c))) mgrData[mgr1].usCityWins++;
+      if (MX_CITIES.some(c => city.includes(c))) mgrData[mgr1].mxCityWins++;
+      if (CA_CITIES.some(c => city.includes(c))) mgrData[mgr1].caCityWins++;
+
+      // Upset
+      if (r.upset && !firstUpsetMgr) firstUpsetMgr = mgr1;
+    }
+
+    if (r.result === 'draw' && !r.globle && !r.isAdvance) {
+      if (!firstBloodMgr && (mgr1 || mgr2)) firstBloodMgr = mgr1 || mgr2;
+    }
+
+    // Clean sheets
+    if (r.clean1 && mgr1) {
+      mgrData[mgr1].cleanSheets++;
+      if (!firstWallMgr) firstWallMgr = mgr1;
+    }
+    if (r.clean2 && mgr2) {
+      mgrData[mgr2].cleanSheets++;
+      if (!firstWallMgr) firstWallMgr = mgr2;
+    }
+
+    // Hat tricks
+    if (r.hattrick1 && mgr1) mgrData[mgr1].hatTricks++;
+    if (r.hattrick2 && mgr2) mgrData[mgr2].hatTricks++;
+
+    // Golden boot / glove / awards
+    if (r.goldenBoot) { const m = owned(r.goldenBoot); if (m) mgrData[m].goldenBoot = true; }
+    if (r.goldenGlove) { const m = owned(r.goldenGlove); if (m) mgrData[m].goldenGlove = true; }
+
+    // Champion / Runner up
+    if (r.stage === 'final' && r.result === 'win') {
+      if (mgr1) mgrData[mgr1].champion = true;
+      if (mgr2) mgrData[mgr2].runnerUp = true;
+    }
+  });
+
+  // Week 1 points: first 7 days from June 11
+  const week1End = new Date('2026-06-18T23:59:59Z');
+  mgrs.forEach(m => {
+    const teams = picks[m] || [];
+    let pts = 0;
+    results.forEach(r => {
+      if (r.globle || r.isAdvance || r.isAwards) return;
+      const game = ALL_SCHEDULE.find(g =>
+        (g.home === r.team1 && g.away === r.team2) ||
+        (g.home === r.team2 && g.away === r.team1)
+      );
+      const gameDate = game ? new Date(game.date + 'T23:59:59Z') : null;
+      if (!gameDate || gameDate > week1End) return;
+      if (teams.includes(r.team1) || teams.includes(r.team2)) {
+        // approximate: count survival + win points
+        if (teams.includes(r.team1)) pts += 1;
+        if (r.result === 'win' && teams.includes(r.team1)) pts += 2;
+        if (r.result === 'draw' && teams.includes(r.team1)) pts += 1;
+        if (r.result === 'draw' && teams.includes(r.team2)) { pts += 1; pts += 1; }
+        if (r.result === 'win' && teams.includes(r.team2)) pts += 1;
+        if (r.clean1 && teams.includes(r.team1)) pts += 1;
+        if (r.clean2 && teams.includes(r.team2)) pts += 1;
+      }
+    });
+    mgrData[m].week1Pts = pts;
+  });
+
+  // Assign first-to awards
+  if (firstBloodMgr) trophies[firstBloodMgr].add('firstBlood');
+  if (firstWallMgr) trophies[firstWallMgr].add('wall');
+  if (firstUpsetMgr) trophies[firstUpsetMgr].add('giantKiller');
+
+  // Per-manager awards
+  mgrs.forEach(m => {
+    const d = mgrData[m];
+    const teams = picks[m] || [];
+    if (d.hatTricks > 0) trophies[m].add('hatTrick');
+    if (d.globleCount > 0) trophies[m].add('globle');
+    if (d.usCityWins > 0) trophies[m].add('madeInAmerica');
+    if (d.mxCityWins > 0) trophies[m].add('vivaMexico');
+    if (d.caCityWins > 0) trophies[m].add('oCanada');
+    if (d.advancedTeams.length > 0) trophies[m].add('qualified');
+    if (d.advancedTeams.some(t => { const team = ALL_TEAMS.find(x => x.name === t); return team && team.rank > 30; })) trophies[m].add('darkHorse');
+    if (d.advancedContinents.size >= 3) trophies[m].add('passport');
+    if (Object.values(d.winsPerTeam).some(w => w >= 3)) trophies[m].add('dominant');
+    if (d.usCityWins > 0 && d.mxCityWins > 0 && d.caCityWins > 0) trophies[m].add('worldTraveler');
+    if (d.advancedGroups.size >= 3) trophies[m].add('groupCollector');
+    if (d.champion) trophies[m].add('champion');
+    if (d.runnerUp) trophies[m].add('runnerUp');
+  });
+
+  // Competitive: hotStart (most week1 pts)
+  const maxWeek1 = Math.max(...mgrs.map(m => mgrData[m].week1Pts));
+  if (maxWeek1 > 0) {
+    mgrs.filter(m => mgrData[m].week1Pts === maxWeek1).forEach(m => trophies[m].add('hotStart'));
+  }
+
+  // Competitive: globleChamp (most globle pts)
+  const maxGloble = Math.max(...mgrs.map(m => mgrData[m].globleCount));
+  if (maxGloble > 0) {
+    mgrs.filter(m => mgrData[m].globleCount === maxGloble).forEach(m => trophies[m].add('globleChamp'));
+  }
+
+  // Competitive: woodenSpoon (last place — only if tournament has started)
+  const totalPtsArr = allScores.map(s => s.total);
+  const minPts = Math.min(...totalPtsArr);
+  const maxPts = Math.max(...totalPtsArr);
+  if (maxPts > 0) { // only award once someone is scoring
+    allScores.filter(s => s.total === minPts).forEach(s => trophies[s.manager].add('woodenSpoon'));
+  }
+
+  // Competitive: valuePick (pts / avg FIFA rank of your 8 teams)
+  const valueScores = mgrs.map(m => {
+    const teams = picks[m] || [];
+    const avgRank = teams.length ? teams.reduce((sum, t) => {
+      const team = ALL_TEAMS.find(x => x.name === t);
+      return sum + (team ? team.rank : 50);
+    }, 0) / teams.length : 1;
+    const pts = allScores.find(s => s.manager === m)?.total || 0;
+    return { m, ratio: avgRank > 0 ? pts / avgRank : 0 };
+  });
+  const maxValue = Math.max(...valueScores.map(v => v.ratio));
+  if (maxValue > 0) {
+    valueScores.filter(v => v.ratio === maxValue).forEach(v => trophies[v.m].add('valuePickTrophy'));
+  }
+
+  // Competitive: biggestDud — manager whose highest-ranked (best) team has the fewest points
+  const dudScores = mgrs.map(m => {
+    const teams = picks[m] || [];
+    const bestTeam = teams.reduce((best, t) => {
+      const team = ALL_TEAMS.find(x => x.name === t);
+      return team && (!best || team.rank < best.rank) ? team : best;
+    }, null);
+    if (!bestTeam) return { m, dudScore: 0 };
+    const pts = allScores.find(s => s.manager === m)?.breakdown?.[bestTeam.name]?.pts || 0;
+    return { m, dudScore: pts, bestTeam: bestTeam.name, bestRank: bestTeam.rank };
+  });
+  // Only award if tournament has started and best team is in top 10
+  const eligibleDuds = dudScores.filter(d => d.bestRank <= 10 && maxPts > 0);
+  if (eligibleDuds.length) {
+    const minDud = Math.min(...eligibleDuds.map(d => d.dudScore));
+    eligibleDuds.filter(d => d.dudScore === minDud).forEach(d => trophies[d.m].add('biggestDud'));
+  }
+
+  return trophies;
+}
+
+function renderTrophyBadges(trophySet) {
+  if (!trophySet || trophySet.size === 0) return '';
+  return '<div class="trophy-row">' +
+    [...trophySet].map(key => {
+      const def = TROPHY_DEFS[key];
+      if (!def) return '';
+      return `<span class="trophy-badge" onclick="toggleTrophy(this)">
+        <span>${def.emoji}</span>
+        <span class="trophy-label">${def.name}</span>
+        <span class="trophy-tooltip">${def.desc}</span>
+      </span>`;
+    }).join('') +
+  '</div>';
+}
+
+function toggleTrophy(el) {
+  // Close any other open tooltips first
+  document.querySelectorAll('.trophy-badge.open').forEach(b => { if (b !== el) b.classList.remove('open'); });
+  el.classList.toggle('open');
+  // Auto-close after 4 seconds
+  if (el.classList.contains('open')) {
+    setTimeout(() => el.classList.remove('open'), 4000);
+  }
+}
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 
