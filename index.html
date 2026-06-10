@@ -933,10 +933,8 @@
             </div>
             <div id="res-inferred" style="margin-top:0.75rem;font-size:0.78rem;color:var(--muted);text-align:center;min-height:1.2em;"></div>
           </div>
-          <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
-            <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;color:var(--muted);cursor:pointer;">
-              <input type="checkbox" id="res-upset-check" style="accent-color:var(--green);"> ⚡ Upset Bonus (+5)
-            </label>
+          <div id="res-upset-inferred" style="display:none;margin-top:0.5rem;padding:0.4rem 0.75rem;background:var(--surface2);border:1px solid var(--gold);border-radius:6px;font-size:0.78rem;color:var(--gold);width:fit-content;">
+            ⚡ Upset Bonus will be auto-applied (+5)
           </div>
           <div style="margin-top:1rem;">
             <button class="btn" onclick="logGroupResult()">Log Result</button>
@@ -1661,7 +1659,7 @@ function onGameSelect() {
   document.getElementById('res-hat-away').classList.remove('active-hat');
   document.getElementById('res-hat-home').style.borderColor = '';
   document.getElementById('res-away-mgr').style.color = 'var(--green)';
-  document.getElementById('res-upset-check').checked = false;
+  const upsetBadge = document.getElementById('res-upset-inferred'); if (upsetBadge) upsetBadge.style.display = 'none';
   detail.style.display = 'block';
 }
 
@@ -1669,12 +1667,29 @@ function onScoreChange() {
   const h = parseInt(document.getElementById('res-score-home').value);
   const a = parseInt(document.getElementById('res-score-away').value);
   const inf = document.getElementById('res-inferred');
-  if (isNaN(h) || isNaN(a)) { inf.textContent = ''; return; }
+  const upsetBadge = document.getElementById('res-upset-inferred');
+  if (isNaN(h) || isNaN(a)) { inf.textContent = ''; if (upsetBadge) upsetBadge.style.display = 'none'; return; }
+
   const home = document.getElementById('res-home-name').textContent;
   const away = document.getElementById('res-away-name').textContent;
-  if (h > a) inf.textContent = `✓ ${home} wins · ${a === 0 ? home + ' clean sheet' : 'no clean sheet'}`;
-  else if (a > h) inf.textContent = `✓ ${away} wins · ${h === 0 ? away + ' clean sheet' : 'no clean sheet'}`;
-  else inf.textContent = `✓ Draw · ${h === 0 ? 'Double clean sheet' : 'No clean sheets'}`;
+  const hRank = getRankForTeam(home);
+  const aRank = getRankForTeam(away);
+
+  // Determine winner
+  let winner = null, loser = null, winnerRank = null, loserRank = null;
+  if (h > a) {
+    winner = home; loser = away; winnerRank = hRank; loserRank = aRank;
+    inf.textContent = `✓ ${home} wins · ${a === 0 ? home + ' clean sheet' : 'no clean sheet'}`;
+  } else if (a > h) {
+    winner = away; loser = home; winnerRank = aRank; loserRank = hRank;
+    inf.textContent = `✓ ${away} wins · ${h === 0 ? away + ' clean sheet' : 'no clean sheet'}`;
+  } else {
+    inf.textContent = `✓ Draw · ${h === 0 ? 'Double clean sheet' : 'No clean sheets'}`;
+  }
+
+  // Auto-detect upset: winner ranked 15+ spots worse than loser
+  const isUpset = winner && winnerRank && loserRank && (winnerRank - loserRank) >= 15;
+  if (upsetBadge) upsetBadge.style.display = isUpset ? 'block' : 'none';
 }
 
 let hatTricks = { home: false, away: false };
@@ -1705,10 +1720,13 @@ async function logGroupResult() {
   const clean2 = result === 'draw' && actualScoreT1 === 0;
   const hattrick1 = team1 === home ? hatTricks.home : hatTricks.away;
   const hattrick2 = team2 === home ? hatTricks.home : hatTricks.away;
-  const upset = document.getElementById('res-upset-check').checked;
-
   const hRank = getRankForTeam(home);
   const aRank = getRankForTeam(away);
+
+  // Auto-detect upset based on rankings — winner ranked 15+ spots worse than loser
+  const winnerRank = team1 === home ? hRank : aRank;
+  const loserRank  = team1 === home ? aRank : hRank;
+  const upset = result === 'win' && winnerRank && loserRank && (winnerRank - loserRank) >= 15;
 
   const entry = {
     team1, team2, stage: 'group', result,
