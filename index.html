@@ -1277,6 +1277,20 @@ function setLoading(on) {
   document.getElementById('loading-bar').style.opacity = on ? '1' : '0';
 }
 
+const LS_KEY = 'wcf2026_cache';
+
+function saveToCache() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
+}
+
+function loadFromCache() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) { const cached = JSON.parse(raw); state = { ...state, ...cached }; return true; }
+  } catch(e) {}
+  return false;
+}
+
 async function loadState() {
   setLoading(true);
   try {
@@ -1284,11 +1298,12 @@ async function loadState() {
     const json = await res.json();
     if (json.ok) {
       state = { ...state, ...json.data };
+      saveToCache();
     } else {
       toast("Could not load data from server");
     }
   } catch(e) {
-    toast("Network error loading state");
+    toast("Network error — showing cached data");
     console.error(e);
   }
   setLoading(false);
@@ -1307,6 +1322,7 @@ async function api(action, payload) {
     const json = await res.json();
     if (json.ok) {
       state = { ...state, ...json.data };
+      saveToCache();
     } else {
       toast(json.error || "Server error");
     }
@@ -3106,16 +3122,33 @@ function updateHeaderLeader() {
   if (ptsEl) ptsEl.textContent = leader.total + ' pts';
 }
 
-async function init() {
-  await loadState();
+function renderAll() {
   renderSetup();
+  renderSchedule();
+  renderLeaderboard();
   renderCountdown();
   renderDraftResults();
+  renderPastResults();
+  renderTeamsBreakdown();
   populateResultTeams();
   populateAwardSelects();
+  populateGameSelect();
+  populateTeamSelects();
   renderResultLog();
   populateTeamsManagerSelect();
   updateHeaderLeader();
+}
+
+async function init() {
+  // 1. Render immediately from localStorage cache so UI appears instantly
+  const hasCached = loadFromCache();
+  if (hasCached) renderAll();
+
+  // 2. Fetch fresh data from server in background
+  await loadState();
+
+  // 3. Re-render with fresh data
+  renderAll();
 }
 
 init();
