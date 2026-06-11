@@ -1924,19 +1924,16 @@ async function logGloble() {
 }
 
 function populateResultTeams() {
+  // Legacy function — elements removed in new results UI, safe to no-op
   const sel1 = document.getElementById('res-team1');
   const sel2 = document.getElementById('res-team2');
   const opts = ALL_TEAMS.map(t => `<option value="${t.name}">${t.flag} ${t.name}</option>`).join('');
-  sel1.innerHTML = opts;
-  sel2.innerHTML = opts;
+  if (sel1) sel1.innerHTML = opts;
+  if (sel2) sel2.innerHTML = opts;
 }
 
 function populateAwardSelects() {
-  const opts = '<option value="">-- select --</option>' + ALL_TEAMS.map(t => `<option value="${t.name}">${t.flag} ${t.name}</option>`).join('');
-  const gb = document.getElementById('res-golden-boot-team');
-  const gg = document.getElementById('res-golden-glove-team');
-  if (gb) gb.innerHTML = opts;
-  if (gg) gg.innerHTML = opts;
+  // Legacy function — elements removed in new results UI, safe to no-op
 }
 
 async function logResult() {
