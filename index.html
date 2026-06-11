@@ -1159,13 +1159,9 @@
   <!-- SCHEDULE -->
   <div class="panel active" id="panel-schedule">
     <div class="section-title">Upcoming <span>Schedule</span></div>
-    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;flex-wrap:wrap;">
-      <div class="schedule-filters" style="margin-bottom:0;">
-        <div class="group-btn active" id="sf-all" onclick="setScheduleFilter('all', this)">All</div>
-        <div class="group-btn" id="sf-manager" onclick="setScheduleFilter('manager', this)">By Manager</div>
-        <div class="group-btn" id="sf-group" onclick="setScheduleFilter('group', this)">Group Stage</div>
-        <div class="group-btn" id="sf-knockout" onclick="setScheduleFilter('knockout', this)">Knockout</div>
-      </div>
+    <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+      <div class="group-btn active" id="sf-all" onclick="setScheduleFilter('all', this)">All</div>
+      <div class="group-btn" id="sf-manager" onclick="setScheduleFilter('manager', this)">By Manager</div>
     </div>
     <div id="schedule-manager-row" style="display:none;margin-bottom:1rem;">
       <select id="schedule-manager-select" onchange="renderSchedule()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.9rem;outline:none;">
