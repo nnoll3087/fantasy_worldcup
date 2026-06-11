@@ -1105,7 +1105,7 @@
       </div>
       <div class="scoring-card">
         <h4>Team Bonuses</h4>
-        <div class="scoring-row"><span>Survival (every game played, win or lose)</span><span class="pts">+1</span></div>
+        <div class="scoring-row"><span>Survival (knockout rounds only — each game played)</span><span class="pts">+1</span></div>
         <div class="scoring-row"><span>Clean Sheet (opponent kept scoreless)</span><span class="pts">+1</span></div>
         <div class="scoring-row"><span>Hat Trick (3 goals by one player in a single game)</span><span class="pts">+3</span></div>
         <div class="scoring-row"><span>Upset Win (beat a team ranked 15+ spots higher)</span><span class="pts">+5</span></div>
@@ -1520,16 +1520,16 @@ function calcPoints(manager) {
   teams.forEach(t => { breakdown[t] = { pts: 0, detail: [] }; });
 
   state.results.forEach(r => {
-    // Survival point for both teams (not for Globle/advance/awards entries)
-    if (!r.globle && !r.isAdvance && !r.isAwards && teams.includes(r.team1)) {
+    // Survival point — knockout rounds only (not group stage, globle, advance, awards)
+    if (!r.globle && !r.isAdvance && !r.isAwards && r.stage !== 'group' && teams.includes(r.team1)) {
       breakdown[r.team1].pts += 1;
       breakdown[r.team1].detail.push("Survival +1");
     }
-    if (!r.globle && !r.isAdvance && !r.isAwards && r.result === 'draw' && teams.includes(r.team2)) {
+    if (!r.globle && !r.isAdvance && !r.isAwards && r.stage !== 'group' && r.result === 'draw' && teams.includes(r.team2)) {
       breakdown[r.team2].pts += 1;
       breakdown[r.team2].detail.push("Survival +1");
     }
-    if (!r.globle && !r.isAdvance && !r.isAwards && r.result === 'win' && teams.includes(r.team2)) {
+    if (!r.globle && !r.isAdvance && !r.isAwards && r.stage !== 'group' && r.result === 'win' && teams.includes(r.team2)) {
       breakdown[r.team2].pts += 1;
       breakdown[r.team2].detail.push("Survival +1");
     }
@@ -2369,7 +2369,7 @@ function renderPastResults() {
 
     function teamPtsFromResult(teamName, isTeam1) {
       let pts = 0; const detail = [];
-      if (!r.globle && !r.isAdvance && !r.isAwards) { pts += 1; detail.push('Survival +1'); }
+      if (!r.globle && !r.isAdvance && !r.isAwards && r.stage !== 'group') { pts += 1; detail.push('Survival +1'); }
       if (r.result === 'win' && isTeam1) { const sp = pointsAtStake(r.stage); pts += sp; detail.push(`Win +${sp}`); }
       if (r.result === 'win' && !isTeam1 && r.stage === 'final') { pts += 13; detail.push('Runner-up +13'); }
       if (r.result === 'draw') { pts += 1; detail.push('Draw +1'); }
@@ -2432,7 +2432,7 @@ function calcTeamPoints(teamName) {
     const isT1 = r.team1 === teamName;
     const isT2 = r.team2 === teamName;
     if (!isT1 && !isT2) return;
-    if (!r.globle && !r.isAdvance && !r.isAwards) { pts += 1; detail.push('Survival +1'); }
+    if (!r.globle && !r.isAdvance && !r.isAwards && r.stage !== 'group') { pts += 1; detail.push('Survival +1'); }
     if (r.result === 'win' && isT1) { const sp = pointsAtStake(r.stage); pts += sp; detail.push(`Win +${sp}`); }
     if (r.result === 'win' && isT2 && r.stage === 'final') { pts += 13; detail.push('Runner-up +13'); }
     if (r.result === 'draw') { pts += 1; detail.push('Draw +1'); }
