@@ -1043,8 +1043,16 @@
             <select id="award-golden-boot" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;min-width:160px;"></select>
           </div>
           <div class="field">
+            <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">🏅 Golden Ball</label>
+            <select id="award-golden-ball" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;min-width:160px;"></select>
+          </div>
+          <div class="field">
             <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">🧤 Golden Glove</label>
             <select id="award-golden-glove" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;min-width:160px;"></select>
+          </div>
+          <div class="field">
+            <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">🌟 Best Young Player</label>
+            <select id="award-young-player" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;min-width:160px;"></select>
           </div>
         </div>
         <div style="margin-bottom:1rem;">
@@ -1103,7 +1111,9 @@
         <div class="scoring-row"><span>Biggest Upset (one-time)</span><span class="pts">+10</span></div>
         <div class="scoring-row"><span>Hat Trick</span><span class="pts">+3</span></div>
         <div class="scoring-row"><span>Golden Boot Winner</span><span class="pts">+10</span></div>
+        <div class="scoring-row"><span>Golden Ball (best player)</span><span class="pts">+8</span></div>
         <div class="scoring-row"><span>Golden Glove Winner</span><span class="pts">+5</span></div>
+        <div class="scoring-row"><span>Best Young Player</span><span class="pts">+5</span></div>
         <div class="scoring-row"><span>Globle Answer (daily)</span><span class="pts">+1</span></div>
       </div>
       <div class="scoring-card">
@@ -1579,10 +1589,22 @@ function calcPoints(manager) {
       breakdown[r.goldenBoot].detail.push("Golden Boot +10");
       bonuses.push("⚽ Golden Boot");
     }
+    if (r.goldenBall && teams.includes(r.goldenBall)) {
+      if (!breakdown[r.goldenBall]) breakdown[r.goldenBall] = { pts: 0, detail: [] };
+      breakdown[r.goldenBall].pts += 8;
+      breakdown[r.goldenBall].detail.push("Golden Ball +8");
+      bonuses.push("🏅 Golden Ball");
+    }
     if (r.goldenGlove && teams.includes(r.goldenGlove)) {
       breakdown[r.goldenGlove].pts += 5;
       breakdown[r.goldenGlove].detail.push("Golden Glove +5");
       bonuses.push("🧤 Golden Glove");
+    }
+    if (r.youngPlayer && teams.includes(r.youngPlayer)) {
+      if (!breakdown[r.youngPlayer]) breakdown[r.youngPlayer] = { pts: 0, detail: [] };
+      breakdown[r.youngPlayer].pts += 5;
+      breakdown[r.youngPlayer].detail.push("Best Young Player +5");
+      bonuses.push("🌟 Best Young Player");
     }
     // Globle bonus
     if (r.globle && teams.includes(r.team1)) {
@@ -1845,19 +1867,24 @@ async function logKnockoutResult() {
 
 async function logAwards() {
   const boot = document.getElementById('award-golden-boot').value;
+  const ball = document.getElementById('award-golden-ball').value;
   const glove = document.getElementById('award-golden-glove').value;
+  const young = document.getElementById('award-young-player').value;
   const biggestUpset = document.getElementById('award-biggest-upset').checked;
   const biggestUpsetTeam = document.getElementById('award-biggest-upset-team').value;
-  if (!boot && !glove && !biggestUpset) return toast("Nothing selected to award");
+  if (!boot && !ball && !glove && !young && !biggestUpset) return toast("Nothing selected to award");
   if (biggestUpset && state.biggestUpsetUsed) return toast("Biggest Upset already awarded!");
 
   const entry = {
-    team1: biggestUpsetTeam || boot || glove, team2: '', stage: 'final', result: 'awards',
+    team1: biggestUpsetTeam || boot || ball || glove || young,
+    team2: '', stage: 'final', result: 'awards',
     rank1: null, rank2: null, clean1: false, clean2: false,
     hattrick1: false, hattrick2: false, advance1: false, advance2: false,
     upset: false, biggestUpset,
     goldenBoot: boot || null,
+    goldenBall: ball || null,
     goldenGlove: glove || null,
+    youngPlayer: young || null,
     isAwards: true
   };
   const res = await api("logResult", { result: entry });
@@ -1867,7 +1894,7 @@ async function logAwards() {
 function populateTeamSelects() {
   const opts = '<option value="">-- select --</option>' +
     ALL_TEAMS.map(t => `<option value="${t.name}">${t.flag} ${t.name}</option>`).join('');
-  ['award-golden-boot','award-golden-glove','award-biggest-upset-team','res-advance-team','ko-winner','ko-loser','globle-team'].forEach(id => {
+  ['award-golden-boot','award-golden-ball','award-golden-glove','award-young-player','award-biggest-upset-team','res-advance-team','ko-winner','ko-loser','globle-team'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = opts;
   });
@@ -1963,7 +1990,9 @@ function renderResultLog() {
     if (r.isAwards) {
       const parts = [];
       if (r.goldenBoot) parts.push(`⚽ Golden Boot: ${r.goldenBoot}`);
+      if (r.goldenBall) parts.push(`🏅 Golden Ball: ${r.goldenBall}`);
       if (r.goldenGlove) parts.push(`🧤 Golden Glove: ${r.goldenGlove}`);
+      if (r.youngPlayer) parts.push(`🌟 Best Young Player: ${r.youngPlayer}`);
       if (r.biggestUpset) parts.push(`🏆 Biggest Upset: ${r.team1}`);
       return `<div class="result-entry">
         <div class="re-match">🏅 Awards</div>
@@ -2341,7 +2370,9 @@ function renderPastResults() {
       if (isTeam1 && r.upset && r.result === 'win') { pts += 5; detail.push('Upset +5'); }
       if (isTeam1 && r.biggestUpset && r.result === 'win') { pts += 10; detail.push('Biggest Upset +10'); }
       if (r.goldenBoot === teamName) { pts += 10; detail.push('Golden Boot +10'); }
+      if (r.goldenBall === teamName) { pts += 8; detail.push('Golden Ball +8'); }
       if (r.goldenGlove === teamName) { pts += 5; detail.push('Golden Glove +5'); }
+      if (r.youngPlayer === teamName) { pts += 5; detail.push('Best Young Player +5'); }
       if (r.globle && r.team1 === teamName) { pts += 1; detail.push('Globle +1'); }
       return { pts, detail };
     }
@@ -2402,7 +2433,9 @@ function calcTeamPoints(teamName) {
     if (isT1 && r.upset && r.result === 'win') { pts += 5; detail.push('Upset +5'); }
     if (isT1 && r.biggestUpset && r.result === 'win') { pts += 10; detail.push('Biggest Upset +10'); }
     if (r.goldenBoot === teamName) { pts += 10; detail.push('Golden Boot +10'); }
+    if (r.goldenBall === teamName) { pts += 8; detail.push('Golden Ball +8'); }
     if (r.goldenGlove === teamName) { pts += 5; detail.push('Golden Glove +5'); }
+    if (r.youngPlayer === teamName) { pts += 5; detail.push('Best Young Player +5'); }
     if (r.globle && r.team1 === teamName) { pts += 1; detail.push('Globle +1'); }
   });
   return { pts, detail };
