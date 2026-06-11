@@ -862,21 +862,21 @@
     <span class="logo-top">World Cup Fantasy</span>
     <span class="logo-sub">2026 — USA / Mexico / Canada</span>
   </div>
-  <div class="header-badge">
-    <strong id="countdown">Jun 11, 2026</strong>
-    Kickoff
+  <div class="header-badge" id="header-badge" onclick="showTab('leaderboard');document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===1));" style="cursor:pointer;">
+    <strong id="header-leader-name">Loading...</strong>
+    <span id="header-leader-pts" style="font-size:0.75rem;color:var(--muted);">pts</span>
   </div>
 </header>
 
 <div class="tabs">
-  <div class="tab active" onclick="showTab('countdown')">Countdown</div>
-  <div class="tab" onclick="showTab('schedule')">Schedule</div>
+  <div class="tab active" onclick="showTab('schedule')">Schedule</div>
   <div class="tab" onclick="showTab('leaderboard')">Leaderboard</div>
   <div class="tab" onclick="showTab('teams')">Teams</div>
   <div class="tab" onclick="showTab('pastresults')">Past Results</div>
   <div class="tab" onclick="showTab('scoring')">Scoring</div>
   <div class="tab" onclick="showTab('draft')">Draft Results</div>
   <div class="tab" onclick="showTab('results')">Enter Results</div>
+  <div class="tab" onclick="showTab('countdown')">Countdown</div>
 </div>
 
 <main>
@@ -1104,17 +1104,20 @@
         <div class="scoring-row"><span>Champion</span><span class="pts">+20</span></div>
       </div>
       <div class="scoring-card">
-        <h4>Bonuses</h4>
-        <div class="scoring-row"><span>Clean Sheet (any game)</span><span class="pts">+1</span></div>
-        <div class="scoring-row"><span>Survival Point (per game)</span><span class="pts">+1</span></div>
-        <div class="scoring-row"><span>Upset Bonus (15+ spots)</span><span class="pts">+5</span></div>
-        <div class="scoring-row"><span>Biggest Upset (one-time)</span><span class="pts">+10</span></div>
-        <div class="scoring-row"><span>Hat Trick</span><span class="pts">+3</span></div>
-        <div class="scoring-row"><span>Golden Boot Winner</span><span class="pts">+10</span></div>
-        <div class="scoring-row"><span>Golden Ball (best player)</span><span class="pts">+8</span></div>
-        <div class="scoring-row"><span>Golden Glove Winner</span><span class="pts">+5</span></div>
-        <div class="scoring-row"><span>Best Young Player</span><span class="pts">+5</span></div>
-        <div class="scoring-row"><span>Globle Answer (daily)</span><span class="pts">+1</span></div>
+        <h4>Team Bonuses</h4>
+        <div class="scoring-row"><span>Survival (every game played, win or lose)</span><span class="pts">+1</span></div>
+        <div class="scoring-row"><span>Clean Sheet (opponent kept scoreless)</span><span class="pts">+1</span></div>
+        <div class="scoring-row"><span>Upset Win (beat a team ranked 15+ spots higher)</span><span class="pts">+5</span></div>
+        <div class="scoring-row"><span>Biggest Upset (largest ranking gap win, one-time)</span><span class="pts">+10</span></div>
+        <div class="scoring-row"><span>Globle (daily geography game answer matches your team)</span><span class="pts">+1</span></div>
+      </div>
+      <div class="scoring-card">
+        <h4>Player Awards <span style="font-size:0.7rem;color:var(--muted);font-family:'DM Sans',sans-serif;letter-spacing:0;">(awarded at the Final)</span></h4>
+        <div class="scoring-row"><span>Hat Trick (3 goals by one player in a single game)</span><span class="pts">+3</span></div>
+        <div class="scoring-row"><span>Golden Boot (tournament top scorer)</span><span class="pts">+10</span></div>
+        <div class="scoring-row"><span>Golden Glove (best goalkeeper of the tournament)</span><span class="pts">+5</span></div>
+        <div class="scoring-row"><span>Best Young Player (best player under 21)</span><span class="pts">+5</span></div>
+        <div class="scoring-row"><span>Golden Ball (best overall player of the tournament)</span><span class="pts">+3</span></div>
       </div>
       <div class="scoring-card">
         <h4>Draft Rules</h4>
@@ -1128,9 +1131,9 @@
 
 
   <!-- COUNTDOWN -->
-  <div class="panel active" id="panel-countdown">
+  <div class="panel" id="panel-countdown">
     <div class="countdown-hero">
-      <div class="countdown-label">WORLD CUP KICKS OFF IN</div>
+      <div class="countdown-label">WORLD CUP FINAL IN</div>
       <div class="countdown-units" id="countdown-units">
         <div class="countdown-unit"><div class="countdown-num" id="cd-days">--</div><div class="countdown-unit-label">DAYS</div></div>
         <div class="countdown-sep">:</div>
@@ -1154,7 +1157,7 @@
   </div>
 
   <!-- SCHEDULE -->
-  <div class="panel" id="panel-schedule">
+  <div class="panel active" id="panel-schedule">
     <div class="section-title">Upcoming <span>Schedule</span></div>
     <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;flex-wrap:wrap;">
       <div class="schedule-filters" style="margin-bottom:0;">
@@ -1591,8 +1594,8 @@ function calcPoints(manager) {
     }
     if (r.goldenBall && teams.includes(r.goldenBall)) {
       if (!breakdown[r.goldenBall]) breakdown[r.goldenBall] = { pts: 0, detail: [] };
-      breakdown[r.goldenBall].pts += 8;
-      breakdown[r.goldenBall].detail.push("Golden Ball +8");
+      breakdown[r.goldenBall].pts += 3;
+      breakdown[r.goldenBall].detail.push("Golden Ball +3");
       bonuses.push("🏅 Golden Ball");
     }
     if (r.goldenGlove && teams.includes(r.goldenGlove)) {
@@ -1840,7 +1843,7 @@ async function logAdvance() {
     isAdvance: true
   };
   const res = await api("logResult", { result: entry });
-  if (res?.ok) { toast(`${team} advancement logged (+3)`); renderResultLog(); }
+  if (res?.ok) { toast(`${team} advancement logged (+3)`); renderResultLog(); updateHeaderLeader(); }
 }
 
 async function logKnockoutResult() {
@@ -1862,7 +1865,7 @@ async function logKnockoutResult() {
     goldenBoot: null, goldenGlove: null
   };
   const res = await api("logResult", { result: entry });
-  if (res?.ok) { toast("Knockout result logged!"); renderResultLog(); }
+  if (res?.ok) { toast("Knockout result logged!"); renderResultLog(); updateHeaderLeader(); }
 }
 
 async function logAwards() {
@@ -1888,7 +1891,7 @@ async function logAwards() {
     isAwards: true
   };
   const res = await api("logResult", { result: entry });
-  if (res?.ok) { toast("Awards logged!"); renderResultLog(); }
+  if (res?.ok) { toast("Awards logged!"); renderResultLog(); updateHeaderLeader(); }
 }
 
 function populateTeamSelects() {
@@ -1916,7 +1919,7 @@ async function logGloble() {
   const res = await api("logResult", { result: entry });
   if (res?.ok) {
     toast(`🌍 Globle bonus +1 awarded to ${mgr} (${team})!`);
-    renderResultLog();
+    renderResultLog(); updateHeaderLeader();
   }
 }
 
@@ -2370,7 +2373,7 @@ function renderPastResults() {
       if (isTeam1 && r.upset && r.result === 'win') { pts += 5; detail.push('Upset +5'); }
       if (isTeam1 && r.biggestUpset && r.result === 'win') { pts += 10; detail.push('Biggest Upset +10'); }
       if (r.goldenBoot === teamName) { pts += 10; detail.push('Golden Boot +10'); }
-      if (r.goldenBall === teamName) { pts += 8; detail.push('Golden Ball +8'); }
+      if (r.goldenBall === teamName) { pts += 3; detail.push('Golden Ball +3'); }
       if (r.goldenGlove === teamName) { pts += 5; detail.push('Golden Glove +5'); }
       if (r.youngPlayer === teamName) { pts += 5; detail.push('Best Young Player +5'); }
       if (r.globle && r.team1 === teamName) { pts += 1; detail.push('Globle +1'); }
@@ -2433,7 +2436,7 @@ function calcTeamPoints(teamName) {
     if (isT1 && r.upset && r.result === 'win') { pts += 5; detail.push('Upset +5'); }
     if (isT1 && r.biggestUpset && r.result === 'win') { pts += 10; detail.push('Biggest Upset +10'); }
     if (r.goldenBoot === teamName) { pts += 10; detail.push('Golden Boot +10'); }
-    if (r.goldenBall === teamName) { pts += 8; detail.push('Golden Ball +8'); }
+    if (r.goldenBall === teamName) { pts += 3; detail.push('Golden Ball +3'); }
     if (r.goldenGlove === teamName) { pts += 5; detail.push('Golden Glove +5'); }
     if (r.youngPlayer === teamName) { pts += 5; detail.push('Best Young Player +5'); }
     if (r.globle && r.team1 === teamName) { pts += 1; detail.push('Globle +1'); }
@@ -2475,7 +2478,7 @@ function renderTeamCard(t) {
 
 // ─── COUNTDOWN + TICKER ───────────────────────────────────────────────────────
 
-const KICKOFF = new Date('2026-06-11T19:00:00Z'); // 3pm ET = 19:00 UTC
+const KICKOFF = new Date('2026-07-19T19:00:00Z'); // World Cup Final — July 19, 3pm ET
 
 function updateCountdownTimer() {
   const now = new Date();
@@ -3094,6 +3097,18 @@ function toggleTrophy(el) {
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 
+function updateHeaderLeader() {
+  const mgrs = state.managers.filter(Boolean);
+  if (!mgrs.length) return;
+  const scores = mgrs.map(m => ({ manager: m, ...calcPoints(m) }));
+  scores.sort((a, b) => b.total - a.total);
+  const leader = scores[0];
+  const nameEl = document.getElementById('header-leader-name');
+  const ptsEl = document.getElementById('header-leader-pts');
+  if (nameEl) nameEl.textContent = '🥇 ' + leader.manager;
+  if (ptsEl) ptsEl.textContent = leader.total + ' pts';
+}
+
 async function init() {
   await loadState();
   renderSetup();
@@ -3103,6 +3118,7 @@ async function init() {
   populateAwardSelects();
   renderResultLog();
   populateTeamsManagerSelect();
+  updateHeaderLeader();
 }
 
 init();
