@@ -2366,6 +2366,13 @@ function renderPastResults() {
     const awayFlag = ALL_TEAMS.find(t => t.name === r.team2)?.flag || '';
     const homeMgr = getManagerForTeam(r.team1);
     const awayMgr = getManagerForTeam(r.team2);
+    // Find the scheduled game to get date and venue
+    const scheduledGame = ALL_SCHEDULE.find(g =>
+      (g.home === r.team1 && g.away === r.team2) ||
+      (g.home === r.team2 && g.away === r.team1)
+    );
+    const gameDate = scheduledGame ? (() => { const d = formatGameDate(scheduledGame.date); return `${d.month} ${d.day}`; })() : '';
+    const gameVenue = scheduledGame?.venue || '';
 
     function teamPtsFromResult(teamName, isTeam1) {
       let pts = 0; const detail = [];
@@ -2395,7 +2402,11 @@ function renderPastResults() {
     return `<div class="pr-card">
       <div class="pr-card-header">
         <div class="pr-card-match">${homeFlag} ${r.team1} ${r.result === 'win' ? 'def.' : 'drew'} ${awayFlag} ${r.team2}</div>
-        <div class="pr-card-stage">${stageName(r.stage, {home:r.team1,away:r.team2})}</div>
+        <div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">
+          <div class="pr-card-stage">${stageName(r.stage, {home:r.team1,away:r.team2})}</div>
+          ${gameDate ? `<div class="pr-card-stage">${gameDate}</div>` : ''}
+          ${gameVenue ? `<div class="pr-card-stage" style="color:var(--muted);">${gameVenue}</div>` : ''}
+        </div>
       </div>
       <div class="pr-rows">
         <div class="pr-row">
@@ -3058,13 +3069,15 @@ function calcTrophies(allScores) {
     }
   }
 
-  // Globle MVP: only if at least 2 managers have earned Globle points and scores differ
+  // Globle MVP: only after tournament ends AND there's a clear winner
+  const tournamentOver = new Date() > new Date('2026-07-19T23:59:59Z');
   const maxGloble = Math.max(...mgrs.map(m => mgrData[m].globleCount));
   const globleEarners = mgrs.filter(m => mgrData[m].globleCount > 0);
-  if (globleEarners.length >= 2 && maxGloble > 0) {
-    mgrs.filter(m => mgrData[m].globleCount === maxGloble).forEach(m => trophies[m].add('globleChamp'));
-  } else if (globleEarners.length === 1) {
-    // Only one person has Globle pts — don't award MVP yet, just the Globle badge
+  if (tournamentOver && globleEarners.length >= 2 && maxGloble > 0) {
+    const secondMax = globleEarners.map(m => mgrData[m].globleCount).sort((a,b) => b-a)[1] || 0;
+    if (maxGloble > secondMax) { // clear leader only, no ties
+      mgrs.filter(m => mgrData[m].globleCount === maxGloble).forEach(m => trophies[m].add('globleChamp'));
+    }
   }
 
   // Hot Start: only after week 1 ends (after June 18) AND scores differ
