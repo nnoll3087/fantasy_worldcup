@@ -1827,7 +1827,9 @@ async function logGroupResult() {
     clean1, clean2, hattrick1, hattrick2,
     advance1: false, advance2: false,
     upset, biggestUpset: false,
-    goldenBoot: null, goldenGlove: null
+    goldenBoot: null, goldenGlove: null,
+    scoreT1: actualScoreT1, scoreT2: actualScoreT2,
+    totalGoals: actualScoreT1 + actualScoreT2
   };
 
   const res = await api("logResult", { result: entry });
@@ -2795,6 +2797,10 @@ const TROPHY_DEFS = {
   champion:        { emoji: "🏆", name: "Champion",           desc: "Your team won the World Cup." },
   runnerUp:        { emoji: "🥈", name: "Runner Up",          desc: "Your team reached the World Cup Final." },
   woodenSpoon:     { emoji: "🥄", name: "Wooden Spoon",       desc: "Last place overall. Better luck in 4 years." },
+  firstHatTrick:   { emoji: "🎩", name: "Hat Trick Hero",      desc: "First manager to have a player score a hat trick in the tournament." },
+  mostGroupGoals:  { emoji: "⚽", name: "Goal Machine",        desc: "Manager whose teams scored the most goals across the group stage." },
+  mostGoalsGame:   { emoji: "💥", name: "Highest Scorer",      desc: "Manager whose team was involved in the highest-scoring single game." },
+  brickWall:       { emoji: "🧱", name: "Brick Wall",          desc: "First manager to have a team record two clean sheets." },
   firstEurope:     { emoji: "🏰", name: "European Opener",     desc: "First manager to win with a European team." },
   firstSouthAm:    { emoji: "🌴", name: "South American Opener", desc: "First manager to win with a South American team." },
   firstNorthAm:    { emoji: "🦅", name: "CONCACAF First",       desc: "First manager to win with a North/Central American or Caribbean team." },
@@ -2846,6 +2852,12 @@ function calcTrophies(allScores) {
   let firstBloodMgr = null;
   let firstWallMgr = null;
   let firstUpsetMgr = null;
+  let firstHatTrickMgr = null;
+  const cleanSheetCount = {}; // manager -> count
+  const groupGoals = {};      // manager -> total goals scored by their teams
+  let maxGameGoals = 0;
+  let maxGameGoalsMgr = null; // last manager whose team was in the highest-scoring game
+  mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; });
   let firstEuropeMgr = null;
   let firstSouthAmMgr = null;
   let firstNorthAmMgr = null;
@@ -2943,6 +2955,31 @@ function calcTrophies(allScores) {
     if (r.hattrick1 && mgr1) mgrData[mgr1].hatTricks++;
     if (r.hattrick2 && mgr2) mgrData[mgr2].hatTricks++;
 
+    // First hat trick
+    if ((r.hattrick1 && mgr1 || r.hattrick2 && mgr2) && !firstHatTrickMgr) {
+      firstHatTrickMgr = (r.hattrick1 && mgr1) ? mgr1 : mgr2;
+    }
+
+    // Clean sheet count per manager (for brick wall)
+    if (r.clean1 && mgr1) { cleanSheetCount[mgr1] = (cleanSheetCount[mgr1] || 0) + 1; }
+    if (r.clean2 && mgr2) { cleanSheetCount[mgr2] = (cleanSheetCount[mgr2] || 0) + 1; }
+
+    // Group stage goals scored by manager's teams
+    if (r.stage === 'group' && !r.globle && !r.isAdvance && !r.isAwards) {
+      const t1Goals = r.scoreT1 || 0;
+      const t2Goals = r.scoreT2 || 0;
+      if (mgr1) groupGoals[mgr1] = (groupGoals[mgr1] || 0) + t1Goals;
+      if (mgr2) groupGoals[mgr2] = (groupGoals[mgr2] || 0) + t2Goals;
+
+      // Highest scoring single game — track both managers involved
+      const total = r.totalGoals || (t1Goals + t2Goals);
+      if (total >= maxGameGoals) {
+        maxGameGoals = total;
+        // Award to whichever manager is involved — if both, prefer winner, else team1 owner
+        maxGameGoalsMgr = mgr1 || mgr2;
+      }
+    }
+
     // Golden boot / glove / awards
     if (r.goldenBoot) { const m = owned(r.goldenBoot); if (m) mgrData[m].goldenBoot = true; }
     if (r.goldenGlove) { const m = owned(r.goldenGlove); if (m) mgrData[m].goldenGlove = true; }
@@ -2985,6 +3022,22 @@ function calcTrophies(allScores) {
   if (firstBloodMgr) trophies[firstBloodMgr].add('firstBlood');
   if (firstWallMgr) trophies[firstWallMgr].add('wall');
   if (firstUpsetMgr) trophies[firstUpsetMgr].add('giantKiller');
+  if (firstHatTrickMgr) trophies[firstHatTrickMgr].add('firstHatTrick');
+  if (maxGameGoalsMgr && maxGameGoals > 0) trophies[maxGameGoalsMgr].add('mostGoalsGame');
+
+  // Brick Wall: first manager to get 2+ clean sheets
+  const brickWallMgr = mgrs.find(m => (cleanSheetCount[m] || 0) >= 2);
+  if (brickWallMgr) trophies[brickWallMgr].add('brickWall');
+
+  // Most group stage goals — only after at least 12 group games logged, clear leader
+  const gamesLogged = state.results.filter(r => !r.globle && !r.isAdvance && !r.isAwards && r.stage === 'group').length;
+  if (gamesLogged >= 12) {
+    const maxGroupGoals = Math.max(...mgrs.map(m => groupGoals[m] || 0));
+    if (maxGroupGoals > 0) {
+      const leaders = mgrs.filter(m => (groupGoals[m] || 0) === maxGroupGoals);
+      if (leaders.length === 1) trophies[leaders[0]].add('mostGroupGoals');
+    }
+  }
   if (firstEuropeMgr) trophies[firstEuropeMgr].add('firstEurope');
   if (firstSouthAmMgr) trophies[firstSouthAmMgr].add('firstSouthAm');
   if (firstNorthAmMgr) trophies[firstNorthAmMgr].add('firstNorthAm');
