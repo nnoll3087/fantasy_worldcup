@@ -1656,7 +1656,7 @@ function renderLeaderboard() {
   scores.sort((a, b) => b.total - a.total);
 
   // Calculate trophies for all managers at once
-  const allTrophies = calcTrophies(scores);
+  let allTrophies = {}; try { allTrophies = calcTrophies(scores); } catch(e) { console.warn("calcTrophies error", e); mgrs.forEach(m => { allTrophies[m] = new Set(); }); }
 
   lb.innerHTML = scores.map((s, i) => {
     const teams = state.picks[s.manager] || [];
@@ -3195,20 +3195,20 @@ function updateHeaderLeader() {
 }
 
 function renderAll() {
-  renderSetup();
-  renderSchedule();
-  renderLeaderboard();
-  renderCountdown();
-  renderDraftResults();
-  renderPastResults();
-  renderTeamsBreakdown();
-  populateResultTeams();
-  populateAwardSelects();
-  populateGameSelect();
-  populateTeamSelects();
-  renderResultLog();
-  populateTeamsManagerSelect();
-  updateHeaderLeader();
+  try { renderSetup(); } catch(e) { console.warn('renderSetup error', e); }
+  try { renderSchedule(); } catch(e) { console.warn('renderSchedule error', e); }
+  try { renderLeaderboard(); } catch(e) { console.warn('renderLeaderboard error', e); }
+  try { renderCountdown(); } catch(e) { console.warn('renderCountdown error', e); }
+  try { renderDraftResults(); } catch(e) { console.warn('renderDraftResults error', e); }
+  try { renderPastResults(); } catch(e) { console.warn('renderPastResults error', e); }
+  try { renderTeamsBreakdown(); } catch(e) { console.warn('renderTeamsBreakdown error', e); }
+  try { populateResultTeams(); } catch(e) { console.warn('populateResultTeams error', e); }
+  try { populateAwardSelects(); } catch(e) { console.warn('populateAwardSelects error', e); }
+  try { populateGameSelect(); } catch(e) { console.warn('populateGameSelect error', e); }
+  try { populateTeamSelects(); } catch(e) { console.warn('populateTeamSelects error', e); }
+  try { renderResultLog(); } catch(e) { console.warn('renderResultLog error', e); }
+  try { populateTeamsManagerSelect(); } catch(e) { console.warn('populateTeamsManagerSelect error', e); }
+  try { updateHeaderLeader(); } catch(e) { console.warn('updateHeaderLeader error', e); }
 }
 
 async function init() {
