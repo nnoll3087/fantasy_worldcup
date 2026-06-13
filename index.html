@@ -1287,20 +1287,30 @@ function loadFromCache() {
   return false;
 }
 
-async function loadState() {
+async function loadState(attempt = 1) {
   setLoading(true);
   try {
-    const res = await fetch('/api/proxy');
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 9000);
+    const res = await fetch('/api/proxy', { signal: controller.signal });
+    clearTimeout(timer);
     const json = await res.json();
     if (json.ok) {
       state = { ...state, ...json.data };
       saveToCache();
+    } else if (json.error === 'timeout' && attempt < 3) {
+      // Google cold start — retry up to 2 more times
+      setLoading(false);
+      return loadState(attempt + 1);
     } else {
-      toast("Could not load data from server");
+      console.warn("Server returned error:", json.error);
     }
   } catch(e) {
-    toast("Network error — showing cached data");
-    console.error(e);
+    if (e.name === 'AbortError' && attempt < 3) {
+      setLoading(false);
+      return loadState(attempt + 1);
+    }
+    console.warn("Load failed, using cache:", e.message);
   }
   setLoading(false);
 }
