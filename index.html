@@ -3040,8 +3040,8 @@ function calcTrophies(allScores) {
   if (brickWallMgr) trophies[brickWallMgr].add('brickWall');
 
   // Most group stage goals — only after at least 12 group games logged, clear leader
-  const gamesLogged = state.results.filter(r => !r.globle && !r.isAdvance && !r.isAwards && r.stage === 'group').length;
-  if (gamesLogged >= 12) {
+  const gamesLoggedGroup = state.results.filter(r => !r.globle && !r.isAdvance && !r.isAwards && r.stage === 'group').length;
+  if (gamesLoggedGroup >= 12) {
     const maxGroupGoals = Math.max(...mgrs.map(m => groupGoals[m] || 0));
     if (maxGroupGoals > 0) {
       const leaders = mgrs.filter(m => (groupGoals[m] || 0) === maxGroupGoals);
@@ -3082,10 +3082,10 @@ function calcTrophies(allScores) {
   const minPts = Math.min(...totalPtsArr);
 
   // Count how many group stage games have been logged (non-globle, non-advance, non-awards)
-  const gamesLogged = state.results.filter(r => !r.globle && !r.isAdvance && !r.isAwards && r.stage === 'group').length;
+  const gamesLoggedAll = state.results.filter(r => !r.globle && !r.isAdvance && !r.isAwards && r.stage === 'group').length;
 
   // Wooden Spoon: only after all group stage games played (72 games) AND scores differ
-  if (gamesLogged >= 72 && maxPts > minPts) {
+  if (gamesLoggedAll >= 72 && maxPts > minPts) {
     allScores.filter(s => s.total === minPts).forEach(s => trophies[s.manager].add('woodenSpoon'));
   }
 
@@ -3100,7 +3100,7 @@ function calcTrophies(allScores) {
     return { m, ratio: avgRank > 0 ? pts / avgRank : 0 };
   });
   const maxValue = Math.max(...valueScores.map(v => v.ratio));
-  if (gamesLogged >= 24 && maxValue > 0) {
+  if (gamesLoggedAll >= 24 && maxValue > 0) {
     // Only award to one manager — the clear leader
     const topValue = valueScores.filter(v => v.ratio === maxValue);
     if (topValue.length === 1) topValue.forEach(v => trophies[v.m].add('valuePickTrophy'));
