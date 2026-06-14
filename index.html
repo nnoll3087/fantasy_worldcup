@@ -2826,6 +2826,7 @@ const TROPHY_DEFS = {
   mostGoalsGame:   { emoji: "💥", name: "Highest Scorer",      desc: "Manager whose team was involved in the highest-scoring single game." },
   brickWall:       { emoji: "🧱", name: "Brick Wall",          desc: "First manager to have a team record two clean sheets." },
   kissedSister:    { emoji: "💋", name: "Kissed Your Sister",   desc: "Manager whose teams have the most draws. A win is a win — this is not a win." },
+  curacaod:        { emoji: "😱", name: "Curaçao'd",             desc: "You got Curaçao'd." },
   firstEurope:     { emoji: "🏰", name: "European Opener",     desc: "First manager to win with a European team." },
   firstSouthAm:    { emoji: "🌴", name: "South American Opener", desc: "First manager to win with a South American team." },
   firstNorthAm:    { emoji: "🦅", name: "CONCACAF First",       desc: "First manager to win with a North/Central American or Caribbean team." },
@@ -3056,6 +3057,16 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
   if (firstUpsetMgr) trophies[firstUpsetMgr].add('giantKiller');
   if (firstHatTrickMgr) trophies[firstHatTrickMgr].add('firstHatTrick');
   if (maxGameGoalsMgr && maxGameGoals > 0) trophies[maxGameGoalsMgr].add('mostGoalsGame');
+
+  // Curaçao'd — awarded to Curacao's owner after their first loss, permanent
+  const curacaoOwner = owned('Curacao');
+  if (curacaoOwner) {
+    const curacaoLost = state.results.some(r =>
+      !r.globle && !r.isAdvance && !r.isAwards &&
+      r.result === 'win' && r.team2 === 'Curacao'
+    );
+    if (curacaoLost) trophies[curacaoOwner].add('curacaod');
+  }
 
   // Kissed Your Sister — most draws (live, moves as draws accumulate)
   const maxDraws = Math.max(...mgrs.map(m => drawCount[m] || 0));
