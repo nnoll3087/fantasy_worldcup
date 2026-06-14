@@ -1644,6 +1644,15 @@ function calcPoints(manager) {
   return { total, breakdown, bonuses };
 }
 
+function gamesPlayedForMgr(manager) {
+  const teams = state.picks[manager] || [];
+  // Count group stage results (non-globle, non-advance, non-awards) involving this manager's teams
+  return state.results.filter(r =>
+    !r.globle && !r.isAdvance && !r.isAwards && r.stage === 'group' &&
+    (teams.includes(r.team1) || teams.includes(r.team2))
+  ).length;
+}
+
 function renderLeaderboard() {
   const lb = document.getElementById('leaderboard');
   const mgrs = state.managers.filter(Boolean);
@@ -1676,7 +1685,10 @@ function renderLeaderboard() {
         <div class="lb-rank">${i+1}</div>
         <div class="lb-name">${s.manager}</div>
         <div class="lb-teams-preview">${teams.map(t=>ALL_TEAMS.find(x=>x.name===t)?.flag||'').join(' ')}</div>
-        <div class="lb-pts">${s.total}<span> pts</span></div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.15rem;margin-right:0.5rem;">
+          <div class="lb-pts">${s.total}<span> pts</span></div>
+          <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.05em;">${gamesPlayedForMgr(s.manager)} games played</div>
+        </div>
         <div class="lb-expand">▾</div>
       </div>
       ${trophyBadges}
@@ -2413,7 +2425,7 @@ function renderPastResults() {
 
     return `<div class="pr-card">
       <div class="pr-card-header">
-        <div class="pr-card-match">${homeFlag} ${r.team1} ${r.result === 'win' ? 'def.' : 'drew'} ${awayFlag} ${r.team2}</div>
+        <div class="pr-card-match">${homeFlag} ${r.team1} ${r.result === 'win' ? 'def.' : 'drew'} ${awayFlag} ${r.team2}${(r.scoreT1 !== undefined && r.scoreT2 !== undefined) ? ` <span style="color:var(--gold);font-size:0.85rem;margin-left:0.4rem;">(${r.scoreT1}–${r.scoreT2})</span>` : ''}</div>
         <div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">
           <div class="pr-card-stage">${stageName(r.stage, {home:r.team1,away:r.team2})}</div>
           ${gameDate ? `<div class="pr-card-stage">${gameDate}</div>` : ''}
@@ -2763,6 +2775,7 @@ function renderDraftResults() {
     const name = p.team?.name || 'Undrafted';
     const grp = p.team?.group || '?';
     const rank = p.team?.rank || '—';
+    const teamPts = p.team ? calcTeamPoints(p.team.name).pts : 0;
     html += `<div class="dr-card">
       <div class="dr-pick">${p.pick}</div>
       <div class="dr-flag">${flag}</div>
@@ -2773,6 +2786,7 @@ function renderDraftResults() {
       <div class="dr-meta">
         <span class="dr-group">Grp ${grp}</span>
         <span class="dr-rank">#${rank}</span>
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:0.9rem;color:var(--gold);">${teamPts} pts</span>
       </div>
     </div>`;
   });
@@ -2811,6 +2825,7 @@ const TROPHY_DEFS = {
   mostGroupGoals:  { emoji: "⚽", name: "Goal Machine",        desc: "Manager whose teams scored the most goals across the group stage." },
   mostGoalsGame:   { emoji: "💥", name: "Highest Scorer",      desc: "Manager whose team was involved in the highest-scoring single game." },
   brickWall:       { emoji: "🧱", name: "Brick Wall",          desc: "First manager to have a team record two clean sheets." },
+  kissedSister:    { emoji: "💋", name: "Kissed Your Sister",   desc: "Manager whose teams have the most draws. A win is a win — this is not a win." },
   firstEurope:     { emoji: "🏰", name: "European Opener",     desc: "First manager to win with a European team." },
   firstSouthAm:    { emoji: "🌴", name: "South American Opener", desc: "First manager to win with a South American team." },
   firstNorthAm:    { emoji: "🦅", name: "CONCACAF First",       desc: "First manager to win with a North/Central American or Caribbean team." },
@@ -2867,7 +2882,8 @@ function calcTrophies(allScores) {
   const groupGoals = {};      // manager -> total goals scored by their teams
   let maxGameGoals = 0;
   let maxGameGoalsMgr = null; // last manager whose team was in the highest-scoring game
-  mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; });
+  const drawCount = {};
+mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0; });
   let firstEuropeMgr = null;
   let firstSouthAmMgr = null;
   let firstNorthAmMgr = null;
@@ -2970,6 +2986,12 @@ function calcTrophies(allScores) {
       firstHatTrickMgr = (r.hattrick1 && mgr1) ? mgr1 : mgr2;
     }
 
+    // Draw count per manager
+    if (r.result === 'draw' && !r.globle && !r.isAdvance && !r.isAwards) {
+      if (mgr1) drawCount[mgr1] = (drawCount[mgr1] || 0) + 1;
+      if (mgr2) drawCount[mgr2] = (drawCount[mgr2] || 0) + 1;
+    }
+
     // Clean sheet count per manager (for brick wall)
     if (r.clean1 && mgr1) { cleanSheetCount[mgr1] = (cleanSheetCount[mgr1] || 0) + 1; }
     if (r.clean2 && mgr2) { cleanSheetCount[mgr2] = (cleanSheetCount[mgr2] || 0) + 1; }
@@ -3034,6 +3056,13 @@ function calcTrophies(allScores) {
   if (firstUpsetMgr) trophies[firstUpsetMgr].add('giantKiller');
   if (firstHatTrickMgr) trophies[firstHatTrickMgr].add('firstHatTrick');
   if (maxGameGoalsMgr && maxGameGoals > 0) trophies[maxGameGoalsMgr].add('mostGoalsGame');
+
+  // Kissed Your Sister — most draws (live, moves as draws accumulate)
+  const maxDraws = Math.max(...mgrs.map(m => drawCount[m] || 0));
+  if (maxDraws > 0) {
+    const drawLeaders = mgrs.filter(m => (drawCount[m] || 0) === maxDraws);
+    if (drawLeaders.length === 1) trophies[drawLeaders[0]].add('kissedSister');
+  }
 
   // Brick Wall: first manager to get 2+ clean sheets
   const brickWallMgr = mgrs.find(m => (cleanSheetCount[m] || 0) >= 2);
