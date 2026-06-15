@@ -2833,6 +2833,7 @@ const TROPHY_DEFS = {
   mostGoalsGame:   { emoji: "💥", name: "Highest Scorer",      desc: "Manager whose team was involved in the highest-scoring single game." },
   brickWall:       { emoji: "🔒", name: "Fort Knox",            desc: "Manager with the most total clean sheets across the tournament." },
   kissedSister:    { emoji: "💋", name: "Kissed Your Sister",   desc: "Manager whose teams have the most draws. A win is a win — this is not a win." },
+  shutOut:         { emoji: "🫙", name: "Empty Jar",             desc: "Manager whose teams have been shut out (scored zero) the most times." },
   curacaod:        { emoji: "😱", name: "Curaçao'd",             desc: "You got Curaçao'd." },
   firstEurope:     { emoji: "🏰", name: "European Opener",     desc: "First manager to win with a European team." },
   firstSouthAm:    { emoji: "🌴", name: "South American Opener", desc: "First manager to win with a South American team." },
@@ -2891,7 +2892,8 @@ function calcTrophies(allScores) {
   let maxGameGoals = 0;
   let maxGameGoalsMgr = null; // last manager whose team was in the highest-scoring game
   const drawCount = {};
-mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0; });
+const shutOutCount = {};
+mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0; shutOutCount[m] = 0; });
   let firstEuropeMgr = null;
   let firstSouthAmMgr = null;
   let firstNorthAmMgr = null;
@@ -2980,11 +2982,15 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
       mgrData[mgr1].cleanSheets++;
       cleanSheetCount[mgr1] = (cleanSheetCount[mgr1] || 0) + 1;
       if (!firstWallMgr) firstWallMgr = mgr1;
+      // team2 was shut out
+      if (mgr2) shutOutCount[mgr2] = (shutOutCount[mgr2] || 0) + 1;
     }
     if (r.clean2 && mgr2) {
       mgrData[mgr2].cleanSheets++;
       cleanSheetCount[mgr2] = (cleanSheetCount[mgr2] || 0) + 1;
       if (!firstWallMgr) firstWallMgr = mgr2;
+      // team1 was shut out
+      if (mgr1) shutOutCount[mgr1] = (shutOutCount[mgr1] || 0) + 1;
     }
 
     // Hat tricks
@@ -3073,6 +3079,13 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
       r.result === 'win' && r.team2 === 'Curacao'
     );
     if (curacaoLost) trophies[curacaoOwner].add('curacaod');
+  }
+
+  // Empty Jar — most times shut out (single leader only)
+  const maxShutOuts = Math.max(...mgrs.map(m => shutOutCount[m] || 0));
+  if (maxShutOuts > 0) {
+    const shutOutLeaders = mgrs.filter(m => (shutOutCount[m] || 0) === maxShutOuts);
+    if (shutOutLeaders.length === 1) trophies[shutOutLeaders[0]].add('shutOut');
   }
 
   // Kissed Your Sister — most draws (live, moves as draws accumulate)
