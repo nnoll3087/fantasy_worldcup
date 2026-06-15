@@ -2355,12 +2355,14 @@ function renderSchedule() {
         <div class="sc-team-row">
           <span class="sc-flag">${homeFlag}</span>
           <span class="sc-tname">${g.home}</span>
+          ${homeRank ? `<span style="font-size:0.62rem;color:var(--muted);flex-shrink:0;">#${homeRank}</span>` : ''}
           ${homeIsUnderdog ? '<span class="sc-dog">⚡</span>' : ''}
           <span class="sc-owner ${homeMgr ? 'owned' : ''}">${homeMgr || 'Unowned'}</span>
         </div>
         <div class="sc-team-row">
           <span class="sc-flag">${awayFlag}</span>
           <span class="sc-tname">${g.away}</span>
+          ${awayRank ? `<span style="font-size:0.62rem;color:var(--muted);flex-shrink:0;">#${awayRank}</span>` : ''}
           ${awayIsUnderdog ? '<span class="sc-dog">⚡</span>' : ''}
           <span class="sc-owner ${awayMgr ? 'owned' : ''}">${awayMgr || 'Unowned'}</span>
         </div>
