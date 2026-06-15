@@ -2978,10 +2978,12 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
     // Clean sheets
     if (r.clean1 && mgr1) {
       mgrData[mgr1].cleanSheets++;
+      cleanSheetCount[mgr1] = (cleanSheetCount[mgr1] || 0) + 1;
       if (!firstWallMgr) firstWallMgr = mgr1;
     }
     if (r.clean2 && mgr2) {
       mgrData[mgr2].cleanSheets++;
+      cleanSheetCount[mgr2] = (cleanSheetCount[mgr2] || 0) + 1;
       if (!firstWallMgr) firstWallMgr = mgr2;
     }
 
@@ -3000,9 +3002,7 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
       if (mgr2) drawCount[mgr2] = (drawCount[mgr2] || 0) + 1;
     }
 
-    // Clean sheet count per manager (for brick wall)
-    if (r.clean1 && mgr1) { cleanSheetCount[mgr1] = (cleanSheetCount[mgr1] || 0) + 1; }
-    if (r.clean2 && mgr2) { cleanSheetCount[mgr2] = (cleanSheetCount[mgr2] || 0) + 1; }
+    // (cleanSheetCount updated above in clean sheets block)
 
     // Group stage goals scored by manager's teams
     if (r.stage === 'group' && !r.globle && !r.isAdvance && !r.isAwards) {
