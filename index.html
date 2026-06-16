@@ -2834,6 +2834,9 @@ const TROPHY_DEFS = {
   brickWall:       { emoji: "🔒", name: "Fort Knox",            desc: "Manager with the most total clean sheets across the tournament." },
   kissedSister:    { emoji: "💋", name: "Kissed Your Sister",   desc: "Manager whose teams have the most draws. A win is a win — this is not a win." },
   shutOut:         { emoji: "🫙", name: "Empty Jar",             desc: "Manager whose teams have been shut out (scored zero) the most times." },
+  ten:             { emoji: "🔟", name: "First to Ten",           desc: "First manager to reach 10 points." },
+  twentyFive:      { emoji: "💫", name: "Quarter Century",        desc: "First manager to reach 25 points." },
+  fifty:           { emoji: "🔥", name: "Fifty Club",             desc: "First manager to reach 50 points." },
   curacaod:        { emoji: "😱", name: "Curaçao'd",             desc: "You got Curaçao'd." },
   firstEurope:     { emoji: "🏰", name: "European Opener",     desc: "First manager to win with a European team." },
   firstSouthAm:    { emoji: "🌴", name: "South American Opener", desc: "First manager to win with a South American team." },
@@ -3146,6 +3149,60 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
 
   // Count how many group stage games have been logged (non-globle, non-advance, non-awards)
   const gamesLoggedAll = state.results.filter(r => !r.globle && !r.isAdvance && !r.isAwards && r.stage === 'group').length;
+
+  // Milestone points trophies — first manager to reach threshold (based on current scores)
+  // We determine "first" by checking if ONLY this manager has reached the threshold
+  // In practice, since results are logged chronologically, we award to whoever hits it first
+  const milestones = [
+    { key: 'ten', threshold: 10 },
+    { key: 'twentyFive', threshold: 25 },
+    { key: 'fifty', threshold: 50 },
+  ];
+  milestones.forEach(({ key, threshold }) => {
+    const qualifiers = allScores.filter(s => s.total >= threshold);
+    if (qualifiers.length === 1) {
+      // Only one manager has reached it — they got there first, award it
+      trophies[qualifiers[0].manager].add(key);
+    } else if (qualifiers.length > 1) {
+      // Multiple managers have reached it — find who got there first by
+      // replaying results chronologically and seeing who crossed first
+      let firstMgr = null;
+      let runningTotals = {};
+      mgrs.forEach(m => { runningTotals[m] = 0; });
+      for (const r of state.results) {
+        if (r.globle || r.isAdvance || r.isAwards) continue;
+        mgrs.forEach(m => {
+          const teams = picks[m] || [];
+          // Add pts from this result for this manager's teams
+          if (teams.includes(r.team1)) {
+            if (r.result === 'win') runningTotals[m] += 2;
+            if (r.result === 'draw') runningTotals[m] += 1;
+            if (r.clean1) runningTotals[m] += 1;
+            if (r.hattrick1) runningTotals[m] += 3;
+            if (r.upset) runningTotals[m] += 5;
+            if (r.goldenBoot === r.team1) runningTotals[m] += 10;
+            if (r.goldenBall === r.team1) runningTotals[m] += 3;
+            if (r.goldenGlove === r.team1) runningTotals[m] += 5;
+            if (r.youngPlayer === r.team1) runningTotals[m] += 5;
+            if (r.globle && r.team1 === teams[0]) runningTotals[m] += 1;
+          }
+          if (teams.includes(r.team2)) {
+            if (r.result === 'draw') runningTotals[m] += 1;
+            if (r.result === 'win') runningTotals[m] += 1; // loser survival (knockout only)
+            if (r.clean2) runningTotals[m] += 1;
+            if (r.hattrick2) runningTotals[m] += 3;
+            if (r.advance1 && teams.includes(r.team1)) runningTotals[m] += 3;
+          }
+        });
+        // Check after each result if someone just crossed threshold
+        if (!firstMgr) {
+          const crossers = mgrs.filter(m => runningTotals[m] >= threshold);
+          if (crossers.length > 0) firstMgr = crossers[0]; // first in managers array order as tiebreak
+        }
+      }
+      if (firstMgr) trophies[firstMgr].add(key);
+    }
+  });
 
   // Wooden Spoon: only after all group stage games played (72 games) AND scores differ
   if (gamesLoggedAll >= 72 && maxPts > minPts) {
