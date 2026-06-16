@@ -1687,9 +1687,12 @@ function renderLeaderboard() {
         <div class="lb-teams-preview">${teams.map(t=>ALL_TEAMS.find(x=>x.name===t)?.flag||'').join(' ')}</div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.15rem;margin-right:0.5rem;">
           <div class="lb-pts">${s.total}<span> pts</span></div>
-          <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.05em;">
-            ${(() => { const g = gamesPlayedForMgr(s.manager); const eff = g > 0 ? (s.total / g).toFixed(2) : '—'; return `${g} gp &nbsp;·&nbsp; <span style="color:var(--green)">${eff} pts/g</span>`; })()}
-          </div>
+          ${(() => {
+            const g = gamesPlayedForMgr(s.manager);
+            const eff = g > 0 ? (s.total / g).toFixed(2) : '—';
+            return `<div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.05em;">${g} gp</div>
+                    <div style="font-size:0.65rem;color:var(--green);letter-spacing:0.05em;">${eff} pts/g</div>`;
+          })()}
         </div>
         <div class="lb-expand">▾</div>
       </div>
