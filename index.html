@@ -2845,6 +2845,7 @@ const TROPHY_DEFS = {
   curacaod:        { emoji: "😱", name: "Curaçao'd",             desc: "You got Curaçao'd." },
   birdNerd:        { emoji: "🦜", name: "Birding Champion",      desc: "Your 8 teams collectively claim the most bird species per eBird's national checklists. A true biodiversity portfolio." },
   birdBust:        { emoji: "🐔", name: "Bird Brain",            desc: "Your 8 teams collectively claim the fewest bird species per eBird's national checklists. Ecologically modest, competitively unrelated." },
+  bestDad:         { emoji: "🍼", name: "Best Dad",                desc: "Awarded via anonymous poll of all spouses and offspring. Unanimous decision. Not up for debate." },
   firstEurope:     { emoji: "🏰", name: "European Opener",     desc: "First manager to win with a European team." },
   firstSouthAm:    { emoji: "🌴", name: "South American Opener", desc: "First manager to win with a South American team." },
   firstNorthAm:    { emoji: "🦅", name: "CONCACAF First",       desc: "First manager to win with a North/Central American or Caribbean team." },
@@ -3216,6 +3217,9 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
   // Corbin: Argentina 1062 + Belgium 271 + Croatia 325 + Austria 315 + Korea Republic 478 + Panama 1003 + Uzbekistan 384 + Jordan 380 = 4,218 (least)
   if (trophies['Pizza']) trophies['Pizza'].add('birdNerd');
   if (trophies['Corbin']) trophies['Corbin'].add('birdBust');
+
+  // Best Dad — hardcoded, anonymous family poll result, not up for re-vote
+  if (trophies['Blaze Nugs']) trophies['Blaze Nugs'].add('bestDad');
 
   // Wooden Spoon: only after all group stage games played (72 games) AND scores differ
   if (gamesLoggedAll >= 72 && maxPts > minPts) {
