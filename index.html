@@ -3158,58 +3158,71 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
   // Count how many group stage games have been logged (non-globle, non-advance, non-awards)
   const gamesLoggedAll = state.results.filter(r => !r.globle && !r.isAdvance && !r.isAwards && r.stage === 'group').length;
 
-  // Milestone points trophies — first manager to reach threshold (based on current scores)
-  // We determine "first" by checking if ONLY this manager has reached the threshold
-  // In practice, since results are logged chronologically, we award to whoever hits it first
+  // Milestone points trophies for 25 and 50 — first manager to reach each threshold,
+  // determined by replaying every result in chronological order (sorted by id, a timestamp)
+  // and tracking real running totals using the same rules as the live scoring engine.
   const milestones = [
-    { key: 'ten', threshold: 10 },
     { key: 'twentyFive', threshold: 25 },
     { key: 'fifty', threshold: 50 },
   ];
-  milestones.forEach(({ key, threshold }) => {
-    const qualifiers = allScores.filter(s => s.total >= threshold);
-    if (qualifiers.length === 1) {
-      // Only one manager has reached it — they got there first, award it
-      trophies[qualifiers[0].manager].add(key);
-    } else if (qualifiers.length > 1) {
-      // Multiple managers have reached it — find who got there first by
-      // replaying results chronologically and seeing who crossed first
-      let firstMgr = null;
-      let runningTotals = {};
-      mgrs.forEach(m => { runningTotals[m] = 0; });
-      for (const r of state.results) {
-        if (r.globle || r.isAdvance || r.isAwards) continue;
-        mgrs.forEach(m => {
-          const teams = picks[m] || [];
-          // Add pts from this result for this manager's teams
-          if (teams.includes(r.team1)) {
-            if (r.result === 'win') runningTotals[m] += 2;
-            if (r.result === 'draw') runningTotals[m] += 1;
-            if (r.clean1) runningTotals[m] += 1;
-            if (r.hattrick1) runningTotals[m] += 3;
-            if (r.upset) runningTotals[m] += 5;
-            if (r.goldenBoot === r.team1) runningTotals[m] += 10;
-            if (r.goldenBall === r.team1) runningTotals[m] += 3;
-            if (r.goldenGlove === r.team1) runningTotals[m] += 5;
-            if (r.youngPlayer === r.team1) runningTotals[m] += 5;
-            if (r.globle && r.team1 === teams[0]) runningTotals[m] += 1;
-          }
-          if (teams.includes(r.team2)) {
-            if (r.result === 'draw') runningTotals[m] += 1;
-            if (r.result === 'win') runningTotals[m] += 1; // loser survival (knockout only)
-            if (r.clean2) runningTotals[m] += 1;
-            if (r.hattrick2) runningTotals[m] += 3;
-            if (r.advance1 && teams.includes(r.team1)) runningTotals[m] += 3;
-          }
-        });
-        // Check after each result if someone just crossed threshold
-        if (!firstMgr) {
-          const crossers = mgrs.filter(m => runningTotals[m] >= threshold);
-          if (crossers.length > 0) firstMgr = crossers[0]; // first in managers array order as tiebreak
-        }
+
+  const sortedResults = [...state.results].sort((a, b) => (a.id || 0) - (b.id || 0));
+  const milestoneRunningTotals = {};
+  mgrs.forEach(m => { milestoneRunningTotals[m] = 0; });
+  const milestoneFirstMgr = {}; // key -> manager who first crossed it
+
+  sortedResults.forEach(r => {
+    if (r.isAdvance) {
+      const m = owned(r.team1);
+      if (m) milestoneRunningTotals[m] += 3;
+    } else if (r.isAwards) {
+      if (r.goldenBoot) { const m = owned(r.goldenBoot); if (m) milestoneRunningTotals[m] += 10; }
+      if (r.goldenBall) { const m = owned(r.goldenBall); if (m) milestoneRunningTotals[m] += 3; }
+      if (r.goldenGlove) { const m = owned(r.goldenGlove); if (m) milestoneRunningTotals[m] += 5; }
+      if (r.youngPlayer) { const m = owned(r.youngPlayer); if (m) milestoneRunningTotals[m] += 5; }
+    } else if (r.globle) {
+      const m = owned(r.team1);
+      if (m) milestoneRunningTotals[m] += 1;
+    } else {
+      // Regular match result
+      const m1 = owned(r.team1);
+      const m2 = r.team2 ? owned(r.team2) : null;
+      const isKnockout = r.stage !== 'group';
+
+      if (m1) {
+        if (r.result === 'win') milestoneRunningTotals[m1] += 2;
+        if (r.result === 'draw') milestoneRunningTotals[m1] += 1;
+        if (r.clean1) milestoneRunningTotals[m1] += 1;
+        if (r.hattrick1) milestoneRunningTotals[m1] += 3;
+        if (r.upset) milestoneRunningTotals[m1] += 5;
+        if (r.biggestUpset) milestoneRunningTotals[m1] += 10;
+        if (isKnockout) milestoneRunningTotals[m1] += 1; // survival, knockout only
       }
-      if (firstMgr) trophies[firstMgr].add(key);
+      if (m2) {
+        if (r.result === 'draw') milestoneRunningTotals[m2] += 1;
+        if (r.clean2) milestoneRunningTotals[m2] += 1;
+        if (r.hattrick2) milestoneRunningTotals[m2] += 3;
+        if (isKnockout) milestoneRunningTotals[m2] += 1; // survival, knockout only
+      }
     }
+
+    // After applying this result, check each milestone — lock in the first crosser only
+    milestones.forEach(({ key, threshold }) => {
+      if (milestoneFirstMgr[key]) return; // already locked in
+      const crossers = mgrs.filter(m => milestoneRunningTotals[m] >= threshold);
+      if (crossers.length === 1) {
+        // Exactly one manager crossed on this result — unambiguous winner
+        milestoneFirstMgr[key] = crossers[0];
+      } else if (crossers.length > 1) {
+        // Multiple managers crossed on the same result (rare tie) — pick whoever has the higher total
+        const top = crossers.reduce((best, m) => milestoneRunningTotals[m] > milestoneRunningTotals[best] ? m : best, crossers[0]);
+        milestoneFirstMgr[key] = top;
+      }
+    });
+  });
+
+  milestones.forEach(({ key }) => {
+    if (milestoneFirstMgr[key]) trophies[milestoneFirstMgr[key]].add(key);
   });
 
   // Bird Nerd / Bird Bust — hardcoded from eBird national species checklists (read 6/15/2026)
@@ -3220,6 +3233,9 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
 
   // Best Dad — hardcoded, anonymous family poll result, not up for re-vote
   if (trophies['Blaze Nugs']) trophies['Blaze Nugs'].add('bestDad');
+
+  // First to Ten — hardcoded, Nate Dawg confirmed first to cross 10 pts (locked 6/16/2026)
+  if (trophies['Nate Dawg']) trophies['Nate Dawg'].add('ten');
 
   // Wooden Spoon: only after all group stage games played (72 games) AND scores differ
   if (gamesLoggedAll >= 72 && maxPts > minPts) {
