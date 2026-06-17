@@ -1646,11 +1646,15 @@ function calcPoints(manager) {
 
 function gamesPlayedForMgr(manager) {
   const teams = state.picks[manager] || [];
-  // Count group stage results (non-globle, non-advance, non-awards) involving this manager's teams
-  return state.results.filter(r =>
-    !r.globle && !r.isAdvance && !r.isAwards && r.stage === 'group' &&
-    (teams.includes(r.team1) || teams.includes(r.team2))
-  ).length;
+  // Count team APPEARANCES, not result rows — if a manager owns both teams
+  // in a single match (e.g. Netherlands vs Japan), that's 2 games played, not 1.
+  let count = 0;
+  state.results.forEach(r => {
+    if (r.globle || r.isAdvance || r.isAwards || r.stage !== 'group') return;
+    if (teams.includes(r.team1)) count++;
+    if (r.team2 && teams.includes(r.team2)) count++;
+  });
+  return count;
 }
 
 function renderLeaderboard() {
