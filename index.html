@@ -2815,7 +2815,7 @@ const TROPHY_DEFS = {
   firstBlood:      { emoji: "🩸", name: "First Blood",       desc: "First manager to score any points in the tournament." },
   wall:            { emoji: "🫧", name: "Squeaky Clean",       desc: "First manager to record a clean sheet in the tournament." },
   giantKiller:     { emoji: "⚡", name: "Giant Killer",       desc: "First manager to land an upset win (15+ ranking spots)." },
-  hatTrick:        { emoji: "🎩", name: "Hat Trick Hero",     desc: "One of your teams had a player score a hat trick." },
+  hatTrick:        { emoji: "🎩", name: "Hat Trickster",      desc: "One of your teams had a player score a hat trick." },
   globle:          { emoji: "🌍", name: "Globle",             desc: "Earned the daily Globle bonus point." },
   madeInAmerica:   { emoji: "🏟️", name: "Made in America",   desc: "Won a match played in a US host city." },
   vivaMexico:      { emoji: "🌮", name: "Viva Mexico",        desc: "Won a match played in a Mexican host city." },
@@ -2834,7 +2834,7 @@ const TROPHY_DEFS = {
   runnerUp:        { emoji: "🥈", name: "Runner Up",          desc: "Your team reached the World Cup Final." },
   woodenSpoon:     { emoji: "🥄", name: "Wooden Spoon",       desc: "Last place overall. Better luck in 4 years." },
   firstHatTrick:   { emoji: "👒", name: "First Trick",            desc: "First manager in the entire league to have a player score a hat trick." },
-  mostGroupGoals:  { emoji: "⚽", name: "Goal Machine",        desc: "Manager whose teams scored the most goals across the group stage." },
+  mostGroupGoals:  { emoji: "⚽", name: "Goal Machine",        desc: "Manager with the most total goals scored across their 8 teams so far." },
   mostGoalsGame:   { emoji: "💥", name: "Highest Scorer",      desc: "Manager whose team was involved in the highest-scoring single game." },
   brickWall:       { emoji: "🔒", name: "Fort Knox",            desc: "Manager with the most total clean sheets across the tournament." },
   kissedSister:    { emoji: "💋", name: "Kissed Your Sister",   desc: "Manager whose teams have the most draws. A win is a win — this is not a win." },
@@ -2843,8 +2843,8 @@ const TROPHY_DEFS = {
   twentyFive:      { emoji: "💫", name: "Quarter Century",        desc: "First manager to reach 25 points." },
   fifty:           { emoji: "🔥", name: "Fifty Club",             desc: "First manager to reach 50 points." },
   curacaod:        { emoji: "😱", name: "Curaçao'd",             desc: "You got Curaçao'd." },
-  birdNerd:        { emoji: "🦜", name: "Birding Champion",      desc: "Your 8 teams collectively claim the most bird species per eBird's national checklists. A true biodiversity portfolio." },
-  birdBust:        { emoji: "🐔", name: "Bird Brain",            desc: "Your 8 teams collectively claim the fewest bird species per eBird's national checklists. Ecologically modest, competitively unrelated." },
+  birdNerd:        { emoji: "🦜", name: "Birding Champion",      desc: "Manager with the most bird species across their 8 teams per eBird's national checklists. A true biodiversity portfolio." },
+  birdBust:        { emoji: "🐔", name: "Bird Brain",            desc: "Manager with the fewest bird species across their 8 teams per eBird's national checklists. Ecologically modest, competitively unrelated." },
   bestDad:         { emoji: "🍼", name: "Best Dad",                desc: "Awarded via anonymous poll of all spouses and offspring. Unanimous decision. Not up for debate." },
   firstEurope:     { emoji: "🏰", name: "European Opener",     desc: "First manager to win with a European team." },
   firstSouthAm:    { emoji: "🌴", name: "South American Opener", desc: "First manager to win with a South American team." },
@@ -3021,8 +3021,8 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
 
     // (cleanSheetCount updated above in clean sheets block)
 
-    // Group stage goals scored by manager's teams
-    if (r.stage === 'group' && !r.globle && !r.isAdvance && !r.isAwards) {
+    // Total goals scored by manager's teams (all stages, not just group)
+    if (!r.globle && !r.isAdvance && !r.isAwards) {
       const t1Goals = r.scoreT1 || 0;
       const t2Goals = r.scoreT2 || 0;
       if (mgr1) groupGoals[mgr1] = (groupGoals[mgr1] || 0) + t1Goals;
@@ -3113,7 +3113,7 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
     if (csLeaders.length === 1) trophies[csLeaders[0]].add('brickWall');
   }
 
-  // Most group stage goals — only after at least 12 group games logged, clear leader
+  // Most total goals scored (all stages) — only after at least 12 games logged, clear leader
   const gamesLoggedGroup = state.results.filter(r => !r.globle && !r.isAdvance && !r.isAwards && r.stage === 'group').length;
   if (gamesLoggedGroup >= 12) {
     const maxGroupGoals = Math.max(...mgrs.map(m => groupGoals[m] || 0));
