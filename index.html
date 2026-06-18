@@ -2818,6 +2818,7 @@ function renderDraftResults() {
 const TROPHY_DEFS = {
   firstBlood:      { emoji: "🩸", name: "First Blood",       desc: "First manager to score any points in the tournament." },
   wall:            { emoji: "🫧", name: "Squeaky Clean",       desc: "First manager to record a clean sheet in the tournament." },
+  anyCleanSheet:   { emoji: "🧱", name: "Brick Wall",          desc: "One of your teams recorded a clean sheet." },
   giantKiller:     { emoji: "⚡", name: "First Upset",        desc: "First manager in the entire league to land an upset win (15+ ranking spots)." },
   upsetArtist:     { emoji: "🎯", name: "Upset Artist",       desc: "One of your teams pulled off an upset win (15+ ranking spots)." },
   hatTrick:        { emoji: "🎩", name: "Hat Trickster",      desc: "One of your teams had a player score a hat trick." },
@@ -3142,6 +3143,7 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
     const teams = picks[m] || [];
     if (d.hatTricks > 0) trophies[m].add('hatTrick');
     if (d.upsets > 0) trophies[m].add('upsetArtist');
+    if ((cleanSheetCount[m] || 0) > 0) trophies[m].add('anyCleanSheet');
     if (d.globleCount > 0) trophies[m].add('globle');
     if (d.usCityWins > 0) trophies[m].add('madeInAmerica');
     if (d.mxCityWins > 0) trophies[m].add('vivaMexico');
