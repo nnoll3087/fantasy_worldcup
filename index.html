@@ -2818,7 +2818,8 @@ function renderDraftResults() {
 const TROPHY_DEFS = {
   firstBlood:      { emoji: "🩸", name: "First Blood",       desc: "First manager to score any points in the tournament." },
   wall:            { emoji: "🫧", name: "Squeaky Clean",       desc: "First manager to record a clean sheet in the tournament." },
-  giantKiller:     { emoji: "⚡", name: "Giant Killer",       desc: "First manager to land an upset win (15+ ranking spots)." },
+  giantKiller:     { emoji: "⚡", name: "First Upset",        desc: "First manager in the entire league to land an upset win (15+ ranking spots)." },
+  upsetArtist:     { emoji: "🎯", name: "Upset Artist",       desc: "One of your teams pulled off an upset win (15+ ranking spots)." },
   hatTrick:        { emoji: "🎩", name: "Hat Trickster",      desc: "One of your teams had a player score a hat trick." },
   globle:          { emoji: "🌍", name: "Globle",             desc: "Earned the daily Globle bonus point." },
   madeInAmerica:   { emoji: "🏟️", name: "Made in America",   desc: "Won a match played in a US host city." },
@@ -2923,7 +2924,7 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
   const mgrData = {};
   mgrs.forEach(m => {
     mgrData[m] = {
-      wins: [], cleanSheets: 0, hatTricks: 0, globleCount: 0,
+      wins: [], cleanSheets: 0, hatTricks: 0, globleCount: 0, upsets: 0,
       usCityWins: 0, mxCityWins: 0, caCityWins: 0,
       advancedTeams: [], winsPerTeam: {}, totalPts: 0,
       week1Pts: 0, advancedGroups: new Set(), advancedContinents: new Set(),
@@ -2974,7 +2975,10 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
       if (CA_CITIES.some(c => city.includes(c))) mgrData[mgr1].caCityWins++;
 
       // Upset
-      if (r.upset && !firstUpsetMgr) firstUpsetMgr = mgr1;
+      if (r.upset) {
+        if (!firstUpsetMgr) firstUpsetMgr = mgr1;
+        mgrData[mgr1].upsets++;
+      }
 
       // Confederation first wins
       const winTeam = ALL_TEAMS.find(t => t.name === r.team1);
@@ -3137,6 +3141,7 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
     const d = mgrData[m];
     const teams = picks[m] || [];
     if (d.hatTricks > 0) trophies[m].add('hatTrick');
+    if (d.upsets > 0) trophies[m].add('upsetArtist');
     if (d.globleCount > 0) trophies[m].add('globle');
     if (d.usCityWins > 0) trophies[m].add('madeInAmerica');
     if (d.mxCityWins > 0) trophies[m].add('vivaMexico');
