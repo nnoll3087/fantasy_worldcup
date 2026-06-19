@@ -2832,8 +2832,12 @@ const TROPHY_DEFS = {
   dominant:        { emoji: "💪", name: "Dominant",           desc: "Had a team win all 3 group stage games." },
   worldTraveler:   { emoji: "🌎", name: "World Traveler",     desc: "Won matches in all 3 host countries (USA, Mexico, Canada)." },
   groupCollector:  { emoji: "🗂️", name: "Group Collector",   desc: "Advanced teams from 3 or more different groups." },
-  hotStart:        { emoji: "🔥", name: "Hot Start",          desc: "Most points earned in the first 7 days of the tournament." },
   globleChamp:     { emoji: "🗺️", name: "Globle MVP",        desc: "Most total Globle bonus points earned." },
+  groupStagePts:   { emoji: "📋", name: "Group Stage MVP",    desc: "Most points earned during the group stage (after all 72 group games)." },
+  r32Pts:          { emoji: "🥉", name: "Round of 32 MVP",    desc: "Most points earned during the Round of 32 (points from that round only)." },
+  r16Pts:          { emoji: "🎖️", name: "Round of 16 MVP",   desc: "Most points earned during the Round of 16 (points from that round only)." },
+  qfPts:           { emoji: "🏵️", name: "Quarterfinal MVP",  desc: "Most points earned during the Quarterfinals (points from that round only)." },
+  sfPts:           { emoji: "🎗️", name: "Semifinal MVP",     desc: "Most points earned during the Semifinals (points from that round only)." },
   valuePickTrophy: { emoji: "💸", name: "Value Pick",         desc: "Highest points-per-average-FIFA-rank ratio. Smartest draft." },
   biggestDud:      { emoji: "🪣", name: "Biggest Dud",        desc: "Highest draft pick (best ranked team) with the least points. Ouch." },
   champion:        { emoji: "🏆", name: "Champion",           desc: "Your team won the World Cup." },
@@ -2928,7 +2932,7 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
       wins: [], cleanSheets: 0, hatTricks: 0, globleCount: 0, upsets: 0,
       usCityWins: 0, mxCityWins: 0, caCityWins: 0,
       advancedTeams: [], winsPerTeam: {}, totalPts: 0,
-      week1Pts: 0, advancedGroups: new Set(), advancedContinents: new Set(),
+      advancedGroups: new Set(), advancedContinents: new Set(),
     };
   });
 
@@ -3057,31 +3061,58 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
     }
   });
 
-  // Week 1 points: first 7 days from June 11
-  const week1End = new Date('2026-06-18T23:59:59Z');
-  mgrs.forEach(m => {
-    const teams = picks[m] || [];
-    let pts = 0;
-    results.forEach(r => {
-      if (r.globle || r.isAdvance || r.isAwards) return;
-      const game = ALL_SCHEDULE.find(g =>
-        (g.home === r.team1 && g.away === r.team2) ||
-        (g.home === r.team2 && g.away === r.team1)
-      );
-      const gameDate = game ? new Date(game.date + 'T23:59:59Z') : null;
-      if (!gameDate || gameDate > week1End) return;
-      if (teams.includes(r.team1) || teams.includes(r.team2)) {
-        // approximate: count survival + win points
-        if (teams.includes(r.team1)) pts += 1;
-        if (r.result === 'win' && teams.includes(r.team1)) pts += 2;
-        if (r.result === 'draw' && teams.includes(r.team1)) pts += 1;
-        if (r.result === 'draw' && teams.includes(r.team2)) { pts += 1; pts += 1; }
-        if (r.result === 'win' && teams.includes(r.team2)) pts += 1;
-        if (r.clean1 && teams.includes(r.team1)) pts += 1;
-        if (r.clean2 && teams.includes(r.team2)) pts += 1;
+  // (Hot Start trophy removed — replaced with round-based "Most Points" trophies below)
+
+  // Round-based "Most Points" trophies — Group Stage is cumulative across the whole stage;
+  // each knockout round (R32, R16, QF, SF) only counts points scored DURING that round, not cumulative.
+  const ROUND_GAME_COUNTS = { group: 72, r32: 16, r16: 8, qf: 4, sf: 2 };
+  const ROUND_TROPHY_KEY = { group: 'groupStagePts', r32: 'r32Pts', r16: 'r16Pts', qf: 'qfPts', sf: 'sfPts' };
+
+  Object.entries(ROUND_GAME_COUNTS).forEach(([stage, expectedGames]) => {
+    const stageResults = state.results.filter(r =>
+      !r.globle && !r.isAdvance && !r.isAwards && r.stage === stage
+    );
+    // Only award once the round is fully complete
+    if (stageResults.length < expectedGames) return;
+
+    const roundPts = {};
+    mgrs.forEach(m => { roundPts[m] = 0; });
+
+    stageResults.forEach(r => {
+      const mgr1 = owned(r.team1);
+      const mgr2 = r.team2 ? owned(r.team2) : null;
+      const isKnockout = stage !== 'group';
+
+      if (mgr1) {
+        if (r.result === 'win') roundPts[mgr1] += 2;
+        if (r.result === 'draw') roundPts[mgr1] += 1;
+        if (r.clean1) roundPts[mgr1] += 1;
+        if (r.hattrick1) roundPts[mgr1] += 3;
+        if (r.upset) roundPts[mgr1] += 5;
+        if (r.biggestUpset) roundPts[mgr1] += 10;
+        if (isKnockout) roundPts[mgr1] += 1; // survival, knockout only
+      }
+      if (mgr2) {
+        if (r.result === 'draw') roundPts[mgr2] += 1;
+        if (r.clean2) roundPts[mgr2] += 1;
+        if (r.hattrick2) roundPts[mgr2] += 3;
+        if (isKnockout) roundPts[mgr2] += 1; // survival, knockout only
       }
     });
-    mgrData[m].week1Pts = pts;
+
+    // Group stage also awards +3 advance bonuses — fold those in for group stage MVP only
+    if (stage === 'group') {
+      state.results.filter(r => r.isAdvance).forEach(r => {
+        const m = owned(r.team1);
+        if (m) roundPts[m] += 3;
+      });
+    }
+
+    const maxRoundPts = Math.max(...mgrs.map(m => roundPts[m] || 0));
+    if (maxRoundPts > 0) {
+      const leaders = mgrs.filter(m => (roundPts[m] || 0) === maxRoundPts);
+      if (leaders.length === 1) trophies[leaders[0]].add(ROUND_TROPHY_KEY[stage]);
+    }
   });
 
   // Assign first-to awards
@@ -3157,8 +3188,6 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
     if (d.champion) trophies[m].add('champion');
     if (d.runnerUp) trophies[m].add('runnerUp');
   });
-
-  // hotStart handled in competitive section below
 
   // globleChamp handled in competitive section below
 
@@ -3305,14 +3334,7 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
     }
   }
 
-  // Hot Start: only after week 1 ends (after June 18) AND scores differ
-  const now = new Date();
-  const week1Over = now > new Date('2026-06-18T23:59:59Z');
-  const maxWeek1 = Math.max(...mgrs.map(m => mgrData[m].week1Pts));
-  if (week1Over && maxWeek1 > 0) {
-    const week1Leaders = mgrs.filter(m => mgrData[m].week1Pts === maxWeek1);
-    if (week1Leaders.length === 1) week1Leaders.forEach(m => trophies[m].add('hotStart'));
-  }
+  // (Hot Start assignment removed)
 
   return trophies;
 }
