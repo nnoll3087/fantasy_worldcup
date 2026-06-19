@@ -2838,7 +2838,7 @@ const TROPHY_DEFS = {
   r16Pts:          { emoji: "🎖️", name: "Round of 16 MVP",   desc: "Most points earned during the Round of 16 (points from that round only)." },
   qfPts:           { emoji: "🏵️", name: "Quarterfinal MVP",  desc: "Most points earned during the Quarterfinals (points from that round only)." },
   sfPts:           { emoji: "🎗️", name: "Semifinal MVP",     desc: "Most points earned during the Semifinals (points from that round only)." },
-  valuePickTrophy: { emoji: "💸", name: "Value Pick",         desc: "Highest points-per-average-FIFA-rank ratio. Smartest draft." },
+  valuePickTrophy: { emoji: "💸", name: "Value Pick",         desc: "Owns the single team that's the biggest steal — a low-ranked (worse) team massively overperforming its draft slot." },
   biggestDud:      { emoji: "🪣", name: "Biggest Dud",        desc: "Highest draft pick (best ranked team) with the least points. Ouch." },
   champion:        { emoji: "🏆", name: "Champion",           desc: "Your team won the World Cup." },
   runnerUp:        { emoji: "🥈", name: "Runner Up",          desc: "Your team reached the World Cup Final." },
@@ -3283,20 +3283,21 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
   }
 
   // Value Pick: only after at least 24 group stage games (matchday 1 complete) AND scores differ
-  const valueScores = mgrs.map(m => {
-    const teams = picks[m] || [];
-    const avgRank = teams.length ? teams.reduce((sum, t) => {
-      const team = ALL_TEAMS.find(x => x.name === t);
-      return sum + (team ? team.rank : 50);
-    }, 0) / teams.length : 1;
-    const pts = allScores.find(s => s.manager === m)?.total || 0;
-    return { m, ratio: avgRank > 0 ? pts / avgRank : 0 };
-  });
-  const maxValue = Math.max(...valueScores.map(v => v.ratio));
-  if (gamesLoggedAll >= 24 && maxValue > 0) {
-    // Only award to one manager — the clear leader
-    const topValue = valueScores.filter(v => v.ratio === maxValue);
-    if (topValue.length === 1) topValue.forEach(v => trophies[v.m].add('valuePickTrophy'));
+  // Value Pick — best single TEAM value relative to its draft expectation.
+  // Formula: points × rank, so a LOW-ranked (worse) team scoring well produces a HIGH score —
+  // this correctly rewards late-round steals (e.g. Ghana #74 scoring 9 pts) over
+  // a top team merely doing fine (e.g. Canada #30 scoring 7 pts).
+  const teamValueScores = ALL_TEAMS.map(t => {
+    const pts = calcTeamPoints(t.name).pts;
+    const value = pts * t.rank;
+    const mgr = owned(t.name);
+    return { team: t.name, mgr, value, pts, rank: t.rank };
+  }).filter(v => v.mgr && v.pts > 0); // must be owned and have scored at least 1 pt
+
+  if (gamesLoggedAll >= 24 && teamValueScores.length > 0) {
+    const maxValue2 = Math.max(...teamValueScores.map(v => v.value));
+    const topTeams = teamValueScores.filter(v => v.value === maxValue2);
+    if (topTeams.length === 1) trophies[topTeams[0].mgr].add('valuePickTrophy');
   }
 
 
