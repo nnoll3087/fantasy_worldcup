@@ -1532,15 +1532,15 @@ function calcPoints(manager) {
 
   state.results.forEach(r => {
     // Survival point — knockout rounds only (not group stage, globle, advance, awards)
-    if (!r.globle && !r.isAdvance && !r.isAwards && r.stage !== 'group' && teams.includes(r.team1)) {
+    if (!r.globle && !r.isAdvance && !r.isAwards && !r.isElimination && r.stage !== 'group' && teams.includes(r.team1)) {
       breakdown[r.team1].pts += 1;
       breakdown[r.team1].detail.push("Survival +1");
     }
-    if (!r.globle && !r.isAdvance && !r.isAwards && r.stage !== 'group' && r.result === 'draw' && teams.includes(r.team2)) {
+    if (!r.globle && !r.isAdvance && !r.isAwards && !r.isElimination && r.stage !== 'group' && r.result === 'draw' && teams.includes(r.team2)) {
       breakdown[r.team2].pts += 1;
       breakdown[r.team2].detail.push("Survival +1");
     }
-    if (!r.globle && !r.isAdvance && !r.isAwards && r.stage !== 'group' && r.result === 'win' && teams.includes(r.team2)) {
+    if (!r.globle && !r.isAdvance && !r.isAwards && !r.isElimination && r.stage !== 'group' && r.result === 'win' && teams.includes(r.team2)) {
       breakdown[r.team2].pts += 1;
       breakdown[r.team2].detail.push("Survival +1");
     }
@@ -1690,7 +1690,7 @@ function gamesPlayedForMgr(manager) {
   // in a single match (e.g. Netherlands vs Japan), that's 2 games played, not 1.
   let count = 0;
   state.results.forEach(r => {
-    if (r.globle || r.isAdvance || r.isAwards || r.stage !== 'group') return;
+    if (r.globle || r.isAdvance || r.isAwards || r.isElimination || r.stage !== 'group') return;
     if (teams.includes(r.team1)) count++;
     if (r.team2 && teams.includes(r.team2)) count++;
   });
@@ -2485,7 +2485,7 @@ function renderPastResults() {
 
     function teamPtsFromResult(teamName, isTeam1) {
       let pts = 0; const detail = [];
-      if (!r.globle && !r.isAdvance && !r.isAwards && r.stage !== 'group') { pts += 1; detail.push('Survival +1'); }
+      if (!r.globle && !r.isAdvance && !r.isAwards && !r.isElimination && r.stage !== 'group') { pts += 1; detail.push('Survival +1'); }
       if (r.result === 'win' && isTeam1) { const sp = pointsAtStake(r.stage); pts += sp; detail.push(`Win +${sp}`); }
       if (r.result === 'win' && !isTeam1 && r.stage === 'final') { pts += 13; detail.push('Runner-up +13'); }
       if (r.result === 'draw') { pts += 1; detail.push('Draw +1'); }
@@ -2552,7 +2552,7 @@ function calcTeamPoints(teamName) {
     const isT1 = r.team1 === teamName;
     const isT2 = r.team2 === teamName;
     if (!isT1 && !isT2) return;
-    if (!r.globle && !r.isAdvance && !r.isAwards && r.stage !== 'group') { pts += 1; detail.push('Survival +1'); }
+    if (!r.globle && !r.isAdvance && !r.isAwards && !r.isElimination && r.stage !== 'group') { pts += 1; detail.push('Survival +1'); }
     if (r.result === 'win' && isT1) { const sp = pointsAtStake(r.stage); pts += sp; detail.push(`Win +${sp}`); }
     if (r.result === 'win' && isT2 && r.stage === 'final') { pts += 13; detail.push('Runner-up +13'); }
     if (r.result === 'draw') { pts += 1; detail.push('Draw +1'); }
@@ -3035,7 +3035,7 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
       }
     }
 
-    if (r.result === 'win' && mgr1 && !r.isAdvance && !r.isAwards && !r.globle) {
+    if (r.result === 'win' && mgr1 && !r.isAdvance && !r.isAwards && !r.globle && !r.isElimination) {
       mgrData[mgr1].wins.push(r);
 
       // First blood
@@ -3074,7 +3074,7 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
       }
     }
 
-    if (r.result === 'draw' && !r.globle && !r.isAdvance) {
+    if (r.result === 'draw' && !r.globle && !r.isAdvance && !r.isElimination) {
       if (!firstBloodMgr && (mgr1 || mgr2)) firstBloodMgr = mgr1 || mgr2;
     }
 
@@ -3104,7 +3104,7 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
     }
 
     // Draw count per manager
-    if (r.result === 'draw' && !r.globle && !r.isAdvance && !r.isAwards) {
+    if (r.result === 'draw' && !r.globle && !r.isAdvance && !r.isAwards && !r.isElimination) {
       if (mgr1) drawCount[mgr1] = (drawCount[mgr1] || 0) + 1;
       if (mgr2) drawCount[mgr2] = (drawCount[mgr2] || 0) + 1;
     }
@@ -3112,7 +3112,7 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
     // (cleanSheetCount updated above in clean sheets block)
 
     // Total goals scored by manager's teams (all stages, not just group)
-    if (!r.globle && !r.isAdvance && !r.isAwards) {
+    if (!r.globle && !r.isAdvance && !r.isAwards && !r.isElimination) {
       const t1Goals = r.scoreT1 || 0;
       const t2Goals = r.scoreT2 || 0;
       if (mgr1) groupGoals[mgr1] = (groupGoals[mgr1] || 0) + t1Goals;
@@ -3147,7 +3147,7 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
 
   Object.entries(ROUND_GAME_COUNTS).forEach(([stage, expectedGames]) => {
     const stageResults = state.results.filter(r =>
-      !r.globle && !r.isAdvance && !r.isAwards && r.stage === stage
+      !r.globle && !r.isAdvance && !r.isAwards && !r.isElimination && r.stage === stage
     );
     // Only award once the round is fully complete
     if (stageResults.length < expectedGames) return;
@@ -3203,7 +3203,7 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
   const curacaoOwner = owned('Curacao');
   if (curacaoOwner) {
     const curacaoLost = state.results.some(r =>
-      !r.globle && !r.isAdvance && !r.isAwards &&
+      !r.globle && !r.isAdvance && !r.isAwards && !r.isElimination &&
       r.result === 'win' && r.team2 === 'Curacao'
     );
     if (curacaoLost) trophies[curacaoOwner].add('curacaod');
@@ -3231,7 +3231,7 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
   }
 
   // Most total goals scored (all stages) — only after at least 12 games logged, clear leader
-  const gamesLoggedGroup = state.results.filter(r => !r.globle && !r.isAdvance && !r.isAwards && r.stage === 'group').length;
+  const gamesLoggedGroup = state.results.filter(r => !r.globle && !r.isAdvance && !r.isAwards && !r.isElimination && r.stage === 'group').length;
   if (gamesLoggedGroup >= 12) {
     const maxGroupGoals = Math.max(...mgrs.map(m => groupGoals[m] || 0));
     if (maxGroupGoals > 0) {
@@ -3273,7 +3273,7 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
   const minPts = Math.min(...totalPtsArr);
 
   // Count how many group stage games have been logged (non-globle, non-advance, non-awards)
-  const gamesLoggedAll = state.results.filter(r => !r.globle && !r.isAdvance && !r.isAwards && r.stage === 'group').length;
+  const gamesLoggedAll = state.results.filter(r => !r.globle && !r.isAdvance && !r.isAwards && !r.isElimination && r.stage === 'group').length;
 
   // Milestone points trophies for 25 and 50 — first manager to reach each threshold,
   // determined by replaying every result in chronological order (sorted by id, a timestamp)
@@ -3289,7 +3289,9 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
   const milestoneFirstMgr = {}; // key -> manager who first crossed it
 
   sortedResults.forEach(r => {
-    if (r.isAdvance) {
+    if (r.isElimination) {
+      // No points awarded for elimination markers — skip entirely
+    } else if (r.isAdvance) {
       const m = owned(r.team1);
       if (m) milestoneRunningTotals[m] += 3;
     } else if (r.isAwards) {
@@ -3393,7 +3395,7 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
     const r1Team = teams[0]; // snake round 1 = first element
     if (!r1Team) return null;
     const hasPlayed = state.results.some(r =>
-      !r.globle && !r.isAdvance && !r.isAwards &&
+      !r.globle && !r.isAdvance && !r.isAwards && !r.isElimination &&
       (r.team1 === r1Team || r.team2 === r1Team)
     );
     if (!hasPlayed) return null;
