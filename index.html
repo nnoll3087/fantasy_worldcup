@@ -1646,10 +1646,10 @@ function calcPoints(manager) {
 }
 
 function getEliminationStatus(teamName) {
-  // Returns { status: 'eliminated'|'advanced'|null, stage: string|null }
+  // Returns { status: 'eliminated'|'advanced'|null, stage: string|null, abbr: string|null }
   // Checks explicit elimination flags first (group stage, manually marked)
   const elimEntry = state.results.find(r => r.isElimination && r.team1 === teamName);
-  if (elimEntry) return { status: 'eliminated', stage: 'Group Stage' };
+  if (elimEntry) return { status: 'eliminated', stage: 'Group Stage', abbr: 'GS' };
 
   // Check for explicit group stage advancement
   const advanceEntry = state.results.find(r => r.isAdvance && r.team1 === teamName);
@@ -1657,31 +1657,41 @@ function getEliminationStatus(teamName) {
 
   // Check knockout losses — a team that lost a knockout match is eliminated at that stage
   const stageLabel = { r32: 'Round of 32', r16: 'Round of 16', qf: 'Quarterfinal', sf: 'Semifinal', final: 'Final' };
+  const stageAbbr = { r32: 'R32', r16: 'R16', qf: 'QF', sf: 'SF', final: 'F' };
   const knockoutLoss = state.results.find(r =>
     !r.globle && !r.isAdvance && !r.isAwards && !r.isElimination &&
     r.stage !== 'group' && r.result === 'win' && r.team2 === teamName
   );
-  if (knockoutLoss) return { status: 'eliminated', stage: stageLabel[knockoutLoss.stage] || knockoutLoss.stage };
+  if (knockoutLoss) return { status: 'eliminated', stage: stageLabel[knockoutLoss.stage] || knockoutLoss.stage, abbr: stageAbbr[knockoutLoss.stage] || knockoutLoss.stage };
 
   // Check if team has won knockout games (still alive, advanced past group)
   const knockoutWin = state.results.some(r =>
     !r.globle && !r.isAdvance && !r.isAwards && !r.isElimination &&
     r.stage !== 'group' && r.result === 'win' && r.team1 === teamName
   );
-  if (knockoutWin || advancedGroup) return { status: 'advanced', stage: null };
+  if (knockoutWin || advancedGroup) return { status: 'advanced', stage: null, abbr: null };
 
-  return { status: null, stage: null };
+  return { status: null, stage: null, abbr: null };
 }
 
 function getEliminationBadgeHtml(teamName, compact) {
   const elim = getEliminationStatus(teamName);
   if (elim.status === 'eliminated') {
-    return `<span style="font-size:${compact ? '0.6rem' : '0.65rem'};color:#e74c3c;background:rgba(231,76,60,0.12);border:1px solid #c0392b;border-radius:3px;padding:0.05rem 0.35rem;letter-spacing:0.03em;white-space:nowrap;">OUT · ${elim.stage}</span>`;
+    return `<span style="font-size:${compact ? '0.62rem' : '0.68rem'};color:var(--muted);font-weight:400;">(${elim.abbr})</span>`;
   }
   if (elim.status === 'advanced') {
     return `<span style="font-size:${compact ? '0.6rem' : '0.65rem'};color:var(--green);" title="Advanced past group stage">✓</span>`;
   }
   return '';
+}
+
+function wrapEliminatedName(teamName, displayHtml) {
+  // Wraps a team's display name in strikethrough + grey if eliminated, otherwise returns unchanged
+  const elim = getEliminationStatus(teamName);
+  if (elim.status === 'eliminated') {
+    return `<span style="text-decoration:line-through;color:var(--muted);">${displayHtml}</span>`;
+  }
+  return displayHtml;
 }
 
 function gamesPlayedForMgr(manager) {
@@ -1723,8 +1733,9 @@ function renderLeaderboard() {
     const teamRows = teams.map(t => {
       const bd = s.breakdown[t] || { pts: 0, detail: [] };
       const elimBadge = getEliminationBadgeHtml(t, false);
+      const flag = ALL_TEAMS.find(x=>x.name===t)?.flag || '';
       return `<div class="lb-team-row">
-        <span class="lb-team-name">${ALL_TEAMS.find(x=>x.name===t)?.flag || ''} ${t} ${elimBadge}</span>
+        <span class="lb-team-name">${wrapEliminatedName(t, flag + ' ' + t)} ${elimBadge}</span>
         <span class="lb-team-breakdown">${bd.detail.join(', ') || 'No points yet'}</span>
         <span class="lb-team-pts">${bd.pts} pts</span>
       </div>`;
@@ -2593,7 +2604,7 @@ function renderTeamCard(t) {
   return `<div class="tb-card">
     <div class="tb-flag">${t.flag}</div>
     <div class="tb-info">
-      <div class="tb-name">${t.name} ${elimBadge}</div>
+      <div class="tb-name">${wrapEliminatedName(t.name, t.name)} ${elimBadge}</div>
       <div class="tb-meta">Group ${t.group} · FIFA #${t.rank} · <span style="color:var(--green)">${t.manager || 'Undrafted'}</span></div>
       ${t.detail && t.detail.length ? `<div class="tb-detail">${t.detail.join(' · ')}</div>` : ''}
     </div>
@@ -2868,11 +2879,12 @@ function renderDraftResults() {
     const rank = p.team?.rank || '—';
     const teamPts = p.team ? calcTeamPoints(p.team.name).pts : 0;
     const elimBadge = p.team ? getEliminationBadgeHtml(p.team.name, true) : '';
+    const dispName = p.team ? wrapEliminatedName(p.team.name, name) : name;
     html += `<div class="dr-card">
       <div class="dr-pick">${p.pick}</div>
       <div class="dr-flag">${flag}</div>
       <div class="dr-body">
-        <div class="dr-team">${name} ${elimBadge}</div>
+        <div class="dr-team">${dispName} ${elimBadge}</div>
         <div class="dr-mgr">${p.mgr}</div>
       </div>
       <div class="dr-meta">
@@ -2902,7 +2914,6 @@ const TROPHY_DEFS = {
   madeInAmerica:   { emoji: "🏟️", name: "Made in America",   desc: "Won a match played in a US host city." },
   vivaMexico:      { emoji: "🌮", name: "Viva Mexico",        desc: "Won a match played in a Mexican host city." },
   oCanada:         { emoji: "🍁", name: "O Canada",           desc: "Won a match played in a Canadian host city." },
-  qualified:       { emoji: "✅", name: "Qualified",          desc: "Got your first team through to the knockout stage." },
   darkHorse:       { emoji: "🐴", name: "Dark Horse",         desc: "Advanced a team ranked outside the top 30." },
   passport:        { emoji: "🌐", name: "Passport Stamp",     desc: "Advanced teams from 3 or more different continents." },
   dominant:        { emoji: "💪", name: "Dominant",           desc: "Had a team win all 3 group stage games." },
@@ -3256,7 +3267,6 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
     if (d.usCityWins > 0) trophies[m].add('madeInAmerica');
     if (d.mxCityWins > 0) trophies[m].add('vivaMexico');
     if (d.caCityWins > 0) trophies[m].add('oCanada');
-    if (d.advancedTeams.length > 0) trophies[m].add('qualified');
     if (d.advancedTeams.some(t => { const team = ALL_TEAMS.find(x => x.name === t); return team && team.rank > 30; })) trophies[m].add('darkHorse');
     if (d.advancedContinents.size >= 3) trophies[m].add('passport');
     if (Object.values(d.winsPerTeam).some(w => w >= 3)) trophies[m].add('dominant');
