@@ -2949,6 +2949,11 @@ const TROPHY_DEFS = {
   firstNorthAm:    { emoji: "🦅", name: "CONCACAF First",       desc: "First manager to win with a North/Central American or Caribbean team." },
   firstAfrica:     { emoji: "🦁", name: "African Opener",       desc: "First manager to win with an African team." },
   firstAsia:       { emoji: "🐉", name: "Asian Opener",         desc: "First manager to win with an Asian or Oceania team." },
+  lastEurope:      { emoji: "🏰", name: "Last European Standing", desc: "Owns the only European team remaining after every other European team has been eliminated." },
+  lastSouthAm:     { emoji: "🌴", name: "Last South American Standing", desc: "Owns the only South American team remaining after every other South American team has been eliminated." },
+  lastNorthAm:     { emoji: "🦅", name: "Last CONCACAF Standing", desc: "Owns the only North/Central American or Caribbean team remaining after every other CONCACAF team has been eliminated." },
+  lastAfrica:      { emoji: "🦁", name: "Last African Standing", desc: "Owns the only African team remaining after every other African team has been eliminated." },
+  lastAsia:        { emoji: "🐉", name: "Last Asian Standing",   desc: "Owns the only Asian or Oceania team remaining after every other team from that region has been eliminated." },
 };
 
 const US_CITIES = ["inglewood","east rutherford","foxborough","houston","philadelphia","dallas","arlington","atlanta","kansas city","miami gardens","seattle"];
@@ -3256,6 +3261,25 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
   if (firstAfricaMgr) trophies[firstAfricaMgr].add('firstAfrica');
   if (firstAsiaMgr) trophies[firstAsiaMgr].add('firstAsia');
 
+  // Last [Region] Standing — owns the only remaining (non-eliminated) team from that confederation,
+  // but only fires once at least one team from that region has actually been eliminated
+  // (otherwise it would trivially fire for everyone before anyone's been knocked out).
+  const LAST_STANDING_KEY = { 1: 'lastEurope', 2: 'lastSouthAm', 3: 'lastNorthAm', 4: 'lastAfrica', 5: 'lastAsia' };
+  [1, 2, 3, 4, 5].forEach(confId => {
+    const regionTeams = ALL_TEAMS.filter(t => CONTINENT_MAP[t.name] === confId);
+    if (regionTeams.length === 0) return;
+
+    const eliminatedCount = regionTeams.filter(t => getEliminationStatus(t.name).status === 'eliminated').length;
+    if (eliminatedCount === 0) return; // nobody from this region is out yet — too early
+
+    const remaining = regionTeams.filter(t => getEliminationStatus(t.name).status !== 'eliminated');
+    if (remaining.length === 1) {
+      const lastTeam = remaining[0];
+      const mgr = owned(lastTeam.name);
+      if (mgr) trophies[mgr].add(LAST_STANDING_KEY[confId]);
+    }
+  });
+
   // Per-manager awards
   mgrs.forEach(m => {
     const d = mgrData[m];
@@ -3415,10 +3439,8 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
 
   if (round1Picks.length >= 2) {
     const minDud = Math.min(...round1Picks.map(d => d.dudScore));
-    const maxDud = Math.max(...round1Picks.map(d => d.dudScore));
-    if (minDud < maxDud) {
-      round1Picks.filter(d => d.dudScore === minDud).forEach(d => trophies[d.m].add('biggestDud'));
-    }
+    const dudLeaders = round1Picks.filter(d => d.dudScore === minDud);
+    if (dudLeaders.length === 1) trophies[dudLeaders[0].m].add('biggestDud');
   }
 
 
