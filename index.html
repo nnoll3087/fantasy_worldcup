@@ -992,14 +992,15 @@
 
       <!-- GROUP STAGE ADVANCEMENT -->
       <div class="results-form" style="margin-bottom:1rem;">
-        <h3>Group Stage Advancement</h3>
-        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">Award +3 pts to a team that advances from the group stage.</p>
+        <h3>Group Stage Status</h3>
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">Mark a team as advanced (+3 pts) or eliminated once group standings are final. This determines what shows on the Leaderboard, Teams, and Draft Results pages.</p>
         <div style="display:flex;gap:0.75rem;align-items:flex-end;flex-wrap:wrap;">
           <div class="field">
             <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">Team</label>
             <select id="res-advance-team" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;min-width:200px;"></select>
           </div>
-          <button class="btn" onclick="logAdvance()">Award Advancement</button>
+          <button class="btn" onclick="logAdvance()">✅ Mark Advanced (+3)</button>
+          <button class="btn" style="background:var(--surface2);border:1px solid #c0392b;color:#e74c3c;" onclick="logElimination()">❌ Mark Eliminated</button>
         </div>
       </div>
 
@@ -1644,6 +1645,45 @@ function calcPoints(manager) {
   return { total, breakdown, bonuses };
 }
 
+function getEliminationStatus(teamName) {
+  // Returns { status: 'eliminated'|'advanced'|null, stage: string|null }
+  // Checks explicit elimination flags first (group stage, manually marked)
+  const elimEntry = state.results.find(r => r.isElimination && r.team1 === teamName);
+  if (elimEntry) return { status: 'eliminated', stage: 'Group Stage' };
+
+  // Check for explicit group stage advancement
+  const advanceEntry = state.results.find(r => r.isAdvance && r.team1 === teamName);
+  const advancedGroup = !!advanceEntry;
+
+  // Check knockout losses — a team that lost a knockout match is eliminated at that stage
+  const stageLabel = { r32: 'Round of 32', r16: 'Round of 16', qf: 'Quarterfinal', sf: 'Semifinal', final: 'Final' };
+  const knockoutLoss = state.results.find(r =>
+    !r.globle && !r.isAdvance && !r.isAwards && !r.isElimination &&
+    r.stage !== 'group' && r.result === 'win' && r.team2 === teamName
+  );
+  if (knockoutLoss) return { status: 'eliminated', stage: stageLabel[knockoutLoss.stage] || knockoutLoss.stage };
+
+  // Check if team has won knockout games (still alive, advanced past group)
+  const knockoutWin = state.results.some(r =>
+    !r.globle && !r.isAdvance && !r.isAwards && !r.isElimination &&
+    r.stage !== 'group' && r.result === 'win' && r.team1 === teamName
+  );
+  if (knockoutWin || advancedGroup) return { status: 'advanced', stage: null };
+
+  return { status: null, stage: null };
+}
+
+function getEliminationBadgeHtml(teamName, compact) {
+  const elim = getEliminationStatus(teamName);
+  if (elim.status === 'eliminated') {
+    return `<span style="font-size:${compact ? '0.6rem' : '0.65rem'};color:#e74c3c;background:rgba(231,76,60,0.12);border:1px solid #c0392b;border-radius:3px;padding:0.05rem 0.35rem;letter-spacing:0.03em;white-space:nowrap;">OUT · ${elim.stage}</span>`;
+  }
+  if (elim.status === 'advanced') {
+    return `<span style="font-size:${compact ? '0.6rem' : '0.65rem'};color:var(--green);" title="Advanced past group stage">✓</span>`;
+  }
+  return '';
+}
+
 function gamesPlayedForMgr(manager) {
   const teams = state.picks[manager] || [];
   // Count team APPEARANCES, not result rows — if a manager owns both teams
@@ -1666,7 +1706,14 @@ function renderLeaderboard() {
   }
 
   const scores = mgrs.map(m => ({ manager: m, ...calcPoints(m) }));
-  scores.sort((a, b) => b.total - a.total);
+  scores.sort((a, b) => {
+    if (b.total !== a.total) return b.total - a.total;
+    const aGp = gamesPlayedForMgr(a.manager);
+    const bGp = gamesPlayedForMgr(b.manager);
+    const aEff = aGp > 0 ? a.total / aGp : 0;
+    const bEff = bGp > 0 ? b.total / bGp : 0;
+    return bEff - aEff;
+  });
 
   // Calculate trophies for all managers at once
   let allTrophies = {}; try { allTrophies = calcTrophies(scores); } catch(e) { console.warn("calcTrophies error", e); mgrs.forEach(m => { allTrophies[m] = new Set(); }); }
@@ -1675,8 +1722,9 @@ function renderLeaderboard() {
     const teams = state.picks[s.manager] || [];
     const teamRows = teams.map(t => {
       const bd = s.breakdown[t] || { pts: 0, detail: [] };
+      const elimBadge = getEliminationBadgeHtml(t, false);
       return `<div class="lb-team-row">
-        <span class="lb-team-name">${ALL_TEAMS.find(x=>x.name===t)?.flag || ''} ${t}</span>
+        <span class="lb-team-name">${ALL_TEAMS.find(x=>x.name===t)?.flag || ''} ${t} ${elimBadge}</span>
         <span class="lb-team-breakdown">${bd.detail.join(', ') || 'No points yet'}</span>
         <span class="lb-team-pts">${bd.pts} pts</span>
       </div>`;
@@ -1891,6 +1939,22 @@ async function logAdvance() {
   if (res?.ok) { toast(`${team} advancement logged (+3)`); renderResultLog(); updateHeaderLeader(); }
 }
 
+async function logElimination() {
+  const team = document.getElementById('res-advance-team').value;
+  if (!team) return toast("Select a team");
+  const entry = {
+    team1: team, team2: '', stage: 'group', result: 'eliminated',
+    rank1: null, rank2: null, clean1: false, clean2: false,
+    hattrick1: false, hattrick2: false,
+    advance1: false, advance2: false,
+    upset: false, biggestUpset: false,
+    goldenBoot: null, goldenGlove: null,
+    isElimination: true, eliminatedStage: 'group'
+  };
+  const res = await api("logResult", { result: entry });
+  if (res?.ok) { toast(`${team} marked eliminated (Group Stage)`); renderResultLog(); updateHeaderLeader(); }
+}
+
 async function logKnockoutResult() {
   const stage = document.getElementById('ko-stage').value;
   const winner = document.getElementById('ko-winner').value;
@@ -2029,6 +2093,16 @@ function renderResultLog() {
         <div class="re-match">⬆️ Advance: ${flag} ${r.team1}</div>
         <div class="re-stage">Group Stage</div>
         <div class="re-pts" style="flex:2;color:var(--gold);">+3 → ${mgr || 'Unowned'}</div>
+        <button class="re-del" onclick="deleteResult(${r.id})">✕</button>
+      </div>`;
+    }
+    if (r.isElimination) {
+      const flag = ALL_TEAMS.find(t => t.name === r.team1)?.flag || '';
+      const mgr = getManagerForTeam(r.team1);
+      return `<div class="result-entry">
+        <div class="re-match">❌ Eliminated: ${flag} ${r.team1}</div>
+        <div class="re-stage">Group Stage</div>
+        <div class="re-pts" style="flex:2;color:#e74c3c;">${mgr || 'Unowned'}</div>
         <button class="re-del" onclick="deleteResult(${r.id})">✕</button>
       </div>`;
     }
@@ -2396,7 +2470,7 @@ function renderPastResults() {
     return;
   }
 
-  container.innerHTML = [...state.results].filter(r => !r.globle).reverse().map(r => {
+  container.innerHTML = [...state.results].filter(r => !r.globle && !r.isAdvance && !r.isElimination && !r.isAwards).reverse().map(r => {
     const homeFlag = ALL_TEAMS.find(t => t.name === r.team1)?.flag || '';
     const awayFlag = ALL_TEAMS.find(t => t.name === r.team2)?.flag || '';
     const homeMgr = getManagerForTeam(r.team1);
@@ -2515,10 +2589,11 @@ function renderTeamsBreakdown() {
 
 
 function renderTeamCard(t) {
+  const elimBadge = getEliminationBadgeHtml(t.name, false);
   return `<div class="tb-card">
     <div class="tb-flag">${t.flag}</div>
     <div class="tb-info">
-      <div class="tb-name">${t.name}</div>
+      <div class="tb-name">${t.name} ${elimBadge}</div>
       <div class="tb-meta">Group ${t.group} · FIFA #${t.rank} · <span style="color:var(--green)">${t.manager || 'Undrafted'}</span></div>
       ${t.detail && t.detail.length ? `<div class="tb-detail">${t.detail.join(' · ')}</div>` : ''}
     </div>
@@ -2792,11 +2867,12 @@ function renderDraftResults() {
     const grp = p.team?.group || '?';
     const rank = p.team?.rank || '—';
     const teamPts = p.team ? calcTeamPoints(p.team.name).pts : 0;
+    const elimBadge = p.team ? getEliminationBadgeHtml(p.team.name, true) : '';
     html += `<div class="dr-card">
       <div class="dr-pick">${p.pick}</div>
       <div class="dr-flag">${flag}</div>
       <div class="dr-body">
-        <div class="dr-team">${name}</div>
+        <div class="dr-team">${name} ${elimBadge}</div>
         <div class="dr-mgr">${p.mgr}</div>
       </div>
       <div class="dr-meta">
@@ -2856,6 +2932,7 @@ const TROPHY_DEFS = {
   birdNerd:        { emoji: "🦜", name: "Birding Champion",      desc: "Manager with the most bird species across their 8 teams per eBird's national checklists. A true biodiversity portfolio." },
   birdBust:        { emoji: "🐔", name: "Bird Brain",            desc: "Manager with the fewest bird species across their 8 teams per eBird's national checklists. Ecologically modest, competitively unrelated." },
   bestDad:         { emoji: "🍼", name: "Best Dad",                desc: "Awarded via anonymous poll of all spouses and offspring. Unanimous decision. Not up for debate." },
+  fullRoster:      { emoji: "🎰", name: "Full House",               desc: "Every single one of your 8 teams has scored at least 1 point. No dead weight on this roster." },
   firstEurope:     { emoji: "🏰", name: "European Opener",     desc: "First manager to win with a European team." },
   firstSouthAm:    { emoji: "🌴", name: "South American Opener", desc: "First manager to win with a South American team." },
   firstNorthAm:    { emoji: "🦅", name: "CONCACAF First",       desc: "First manager to win with a North/Central American or Caribbean team." },
@@ -3277,6 +3354,15 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
   // First to Ten — hardcoded, Nate Dawg confirmed first to cross 10 pts (locked 6/16/2026)
   if (trophies['Nate Dawg']) trophies['Nate Dawg'].add('ten');
 
+  // Full House — every one of a manager's 8 teams has scored at least 1 point
+  mgrs.forEach(m => {
+    const teams = picks[m] || [];
+    if (teams.length === 8) {
+      const allScored = teams.every(t => calcTeamPoints(t).pts > 0);
+      if (allScored) trophies[m].add('fullRoster');
+    }
+  });
+
   // Wooden Spoon: only after all group stage games played (72 games) AND scores differ
   if (gamesLoggedAll >= 72 && maxPts > minPts) {
     allScores.filter(s => s.total === minPts).forEach(s => trophies[s.manager].add('woodenSpoon'));
@@ -3371,7 +3457,14 @@ function updateHeaderLeader() {
   const mgrs = state.managers.filter(Boolean);
   if (!mgrs.length) return;
   const scores = mgrs.map(m => ({ manager: m, ...calcPoints(m) }));
-  scores.sort((a, b) => b.total - a.total);
+  scores.sort((a, b) => {
+    if (b.total !== a.total) return b.total - a.total;
+    const aGp = gamesPlayedForMgr(a.manager);
+    const bGp = gamesPlayedForMgr(b.manager);
+    const aEff = aGp > 0 ? a.total / aGp : 0;
+    const bEff = bGp > 0 ? b.total / bGp : 0;
+    return bEff - aEff;
+  });
   const leader = scores[0];
   const nameEl = document.getElementById('header-leader-name');
   const ptsEl = document.getElementById('header-leader-pts');
