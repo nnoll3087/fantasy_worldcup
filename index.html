@@ -2909,6 +2909,8 @@ const TROPHY_DEFS = {
   anyCleanSheet:   { emoji: "🧱", name: "Brick Wall",          desc: "One of your teams recorded a clean sheet." },
   giantKiller:     { emoji: "⚡", name: "First Upset",        desc: "First manager in the entire league to land an upset win (15+ ranking spots)." },
   upsetArtist:     { emoji: "🎯", name: "Upset Artist",       desc: "One of your teams pulled off an upset win (15+ ranking spots)." },
+  darkHorseStable: { emoji: "🐎", name: "Dark Horse Stable",  desc: "Manager with the most upset wins across their entire roster. Living dangerously." },
+  goodPick:        { emoji: "👃", name: "Good Pick",           desc: "Owns the single highest-scoring team in the entire league right now." },
   hatTrick:        { emoji: "🎩", name: "Hat Trickster",      desc: "One of your teams had a player score a hat trick." },
   globle:          { emoji: "🌍", name: "Globle",             desc: "Earned the daily Globle bonus point." },
   madeInAmerica:   { emoji: "🏟️", name: "Made in America",   desc: "Won a match played in a US host city." },
@@ -3299,6 +3301,25 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
     if (d.champion) trophies[m].add('champion');
     if (d.runnerUp) trophies[m].add('runnerUp');
   });
+
+  // Dark Horse Stable — manager with the most total upset wins (single clear leader only)
+  const maxUpsets = Math.max(...mgrs.map(m => mgrData[m].upsets || 0));
+  if (maxUpsets > 0) {
+    const upsetLeaders = mgrs.filter(m => (mgrData[m].upsets || 0) === maxUpsets);
+    if (upsetLeaders.length === 1) trophies[upsetLeaders[0]].add('darkHorseStable');
+  }
+
+  // Good Pick — manager who owns the single highest-scoring individual team right now
+  const allTeamScores = ALL_TEAMS.map(t => ({
+    team: t.name,
+    mgr: owned(t.name),
+    pts: calcTeamPoints(t.name).pts
+  })).filter(t => t.mgr && t.pts > 0);
+  if (allTeamScores.length > 0) {
+    const maxTeamPts = Math.max(...allTeamScores.map(t => t.pts));
+    const topTeams = allTeamScores.filter(t => t.pts === maxTeamPts);
+    if (topTeams.length === 1) trophies[topTeams[0].mgr].add('goodPick');
+  }
 
   // globleChamp handled in competitive section below
 
