@@ -2936,6 +2936,8 @@ const TROPHY_DEFS = {
   mostGroupGoals:  { emoji: "⚽", name: "Goal Machine",        desc: "Manager with the most total goals scored across their 8 teams so far." },
   mostGoalsGame:   { emoji: "💥", name: "Highest Scorer",      desc: "Manager whose team was involved in the highest-scoring single game." },
   brickWall:       { emoji: "🔒", name: "Fort Knox",            desc: "Manager with the most total clean sheets across the tournament." },
+  absoluteDud:     { emoji: "🪦", name: "Dead Weight",          desc: "One of your teams played all 3 group stage games, scored zero points, and was eliminated. A complete non-factor. Congratulations." },
+  bigFlop:         { emoji: "🤡", name: "The Big Flop",         desc: "Owns the highest-ranked team to be eliminated in the group stage. Paid top dollar for a first-round exit." },
   kissedSister:    { emoji: "💋", name: "Kissed Your Sister",   desc: "Manager whose teams have the most draws. A win is a win — this is not a win." },
   shutOut:         { emoji: "🫙", name: "Empty Jar",             desc: "Manager whose teams have been shut out (scored zero) the most times." },
   ten:             { emoji: "🔟", name: "First to Ten",           desc: "First manager to reach 10 points." },
@@ -3307,6 +3309,37 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
   if (maxUpsets > 0) {
     const upsetLeaders = mgrs.filter(m => (mgrData[m].upsets || 0) === maxUpsets);
     if (upsetLeaders.length === 1) trophies[upsetLeaders[0]].add('darkHorseStable');
+  }
+
+  // Dead Weight — any manager whose team played all 3 group games, got eliminated, and scored 0 pts
+  // A team "played all 3" = appears in exactly 3 group stage result rows
+  const groupResults = state.results.filter(r => !r.globle && !r.isAdvance && !r.isAwards && !r.isElimination && r.stage === 'group');
+  mgrs.forEach(m => {
+    const teams = picks[m] || [];
+    teams.forEach(teamName => {
+      const elim = getEliminationStatus(teamName);
+      if (elim.status !== 'eliminated') return; // must be eliminated
+      const gamesPlayed = groupResults.filter(r => r.team1 === teamName || r.team2 === teamName).length;
+      if (gamesPlayed < 3) return; // must have played all 3 group games
+      const pts = calcTeamPoints(teamName).pts;
+      if (pts === 0) trophies[m].add('absoluteDud');
+    });
+  });
+
+  // The Big Flop — highest-ranked (best FIFA rank = lowest number) team eliminated in group stage
+  // Only after at least one team has been group-stage eliminated
+  const groupEliminated = state.results
+    .filter(r => r.isElimination && r.eliminatedStage === 'group')
+    .map(r => ALL_TEAMS.find(t => t.name === r.team1))
+    .filter(Boolean);
+  if (groupEliminated.length > 0) {
+    // Best rank = lowest rank number
+    const bestRank = Math.min(...groupEliminated.map(t => t.rank));
+    const flopTeams = groupEliminated.filter(t => t.rank === bestRank);
+    if (flopTeams.length === 1) {
+      const mgr = owned(flopTeams[0].name);
+      if (mgr) trophies[mgr].add('bigFlop');
+    }
   }
 
   // Good Pick — manager who owns the single highest-scoring individual team right now
