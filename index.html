@@ -387,6 +387,44 @@
     pointer-events: none;
   }
   .trophy-badge.open .trophy-tooltip { display: block; }
+
+  /* HAIKU CARD */
+  .haiku-card {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.28rem 0.55rem;
+    font-size: 0.75rem;
+    color: var(--gold);
+    cursor: pointer;
+    user-select: none;
+    margin: 0.5rem 0.5rem 0.25rem 0.5rem;
+    transition: border-color 0.2s;
+    -webkit-tap-highlight-color: transparent;
+    flex-wrap: wrap;
+    max-width: calc(100% - 1rem);
+  }
+  .haiku-card:hover { border-color: var(--gold); }
+  .haiku-card .haiku-emoji { font-size: 0.9rem; }
+  .haiku-card .haiku-label { font-size: 0.72rem; letter-spacing: 0.06em; }
+  .haiku-card .haiku-text {
+    display: none;
+    width: 100%;
+    margin-top: 0.4rem;
+    padding-top: 0.4rem;
+    border-top: 1px solid var(--border);
+    font-family: 'Georgia', serif;
+    font-style: italic;
+    font-size: 0.78rem;
+    line-height: 1.55;
+    color: var(--text);
+    text-align: left;
+  }
+  .haiku-card.open .haiku-text { display: block; }
+  .haiku-card.open { border-color: var(--gold); }
   /* Bonus tags kept for other uses */
   .lb-bonus-row {
     margin-top: 0.75rem;
@@ -866,6 +904,7 @@
     <strong id="header-leader-name">Loading...</strong>
     <span id="header-leader-pts" style="font-size:0.75rem;color:var(--muted);">pts</span>
   </div>
+  <button onclick="showTab('results')" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;padding:0.4rem 0.7rem;border-radius:6px;cursor:pointer;margin-left:0.5rem;">Admin</button>
 </header>
 
 <div class="tabs">
@@ -926,10 +965,7 @@
 
   <!-- LEADERBOARD -->
   <div class="panel" id="panel-leaderboard">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
-      <div class="section-title" style="margin-bottom:0;">Live <span>Leaderboard</span></div>
-      <button class="group-btn" onclick="showTab('results')" style="font-size:0.7rem;letter-spacing:0.08em;">Admin</button>
-    </div>
+    <div class="section-title">Live <span>Leaderboard</span></div>
     <div class="leaderboard" id="leaderboard"></div>
   </div>
 
@@ -1700,6 +1736,7 @@ function renderLeaderboard() {
         <div class="lb-expand">▾</div>
       </div>
       ${trophyBadges}
+      ${renderHaikuCard(s.manager)}
       <div class="lb-detail">
         <div class="lb-team-rows">${teamRows || '<div style="color:var(--muted);font-size:0.85rem;">No teams drafted yet</div>'}</div>
       </div>
@@ -3635,6 +3672,27 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
   // (Hot Start assignment removed)
 
   return trophies;
+}
+
+const MANAGER_HAIKUS = {
+  "Blaze Nugs": "Ghana stuns the world\nTurkiye paid for nothing\nBest Dad. Cold comfort.",
+  "PLang":      "Norway, the Vikings\nHaiti pulled like a bad tooth\nReign at the summit",
+  "AK47":       "Curaçao, last pick\nSeven-nil, then nil-nil. Bold.\nSpain alone redeems",
+  "Pizza":      "Brazil delivers\nIraq and Iran together\nscored zero, combined",
+  "Corbin":     "Argentina prays\nJordan, Panama, others\nall came home early",
+  "Nate Dawg":  "Six teams advancing\nZero theatrics or pulse\nBoring, and ahead"
+};
+
+function renderHaikuCard(manager) {
+  const text = MANAGER_HAIKUS[manager];
+  if (!text) return '';
+  // Encode the haiku as a data attribute for safe rendering
+  const lines = text.split("\n").map(l => `<div>${l}</div>`).join('');
+  return `<div class="haiku-card" onclick="this.classList.toggle('open')">
+    <span class="haiku-emoji">📜</span>
+    <span class="haiku-label">Haiku</span>
+    <div class="haiku-text">${lines}</div>
+  </div>`;
 }
 
 function renderTrophyBadges(trophySet) {
