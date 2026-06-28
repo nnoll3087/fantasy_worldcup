@@ -388,40 +388,43 @@
   }
   .trophy-badge.open .trophy-tooltip { display: block; }
 
-  /* HAIKU CARD */
+  /* HAIKU CARD — sits inline with trophy badges */
   .haiku-card {
+    position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.25rem;
     background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: 6px;
-    padding: 0.28rem 0.55rem;
+    padding: 0.22rem 0.5rem;
     font-size: 0.75rem;
     color: var(--gold);
     cursor: pointer;
     user-select: none;
-    margin: 0.5rem 0.5rem 0.25rem 0.5rem;
     transition: border-color 0.2s;
     -webkit-tap-highlight-color: transparent;
-    flex-wrap: wrap;
-    max-width: calc(100% - 1rem);
   }
   .haiku-card:hover { border-color: var(--gold); }
-  .haiku-card .haiku-emoji { font-size: 0.9rem; }
-  .haiku-card .haiku-label { font-size: 0.72rem; letter-spacing: 0.06em; }
+  .haiku-card .haiku-emoji { font-size: 0.85rem; }
+  .haiku-card .haiku-label { font-size: 0.72rem; }
   .haiku-card .haiku-text {
     display: none;
-    width: 100%;
-    margin-top: 0.4rem;
-    padding-top: 0.4rem;
-    border-top: 1px solid var(--border);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 0;
+    background: #1a2b1e;
+    border: 1px solid var(--gold);
+    border-radius: 8px;
+    padding: 0.55rem 0.75rem;
     font-family: 'Georgia', serif;
     font-style: italic;
     font-size: 0.78rem;
     line-height: 1.55;
     color: var(--text);
-    text-align: left;
+    white-space: nowrap;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
   }
   .haiku-card.open .haiku-text { display: block; }
   .haiku-card.open { border-color: var(--gold); }
@@ -987,21 +990,35 @@
       <!-- KNOCKOUT RESULT ENTRY -->
       <div class="results-form" style="margin-bottom:1rem;">
         <h3>Log a Knockout Result</h3>
-        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">Pick a bracket match — winners auto-populate the next round.</p>
-        <div style="display:flex;gap:0.75rem;align-items:flex-end;flex-wrap:wrap;margin-bottom:0.75rem;">
-          <div class="field">
-            <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">Match</label>
-            <select id="ko-match" onchange="onKnockoutMatchChange()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;min-width:260px;"></select>
-          </div>
-          <div class="field">
-            <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">Winner</label>
-            <select id="ko-winner" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;min-width:160px;"></select>
-          </div>
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">Pick a bracket match — winners auto-populate the next round. No draws in knockout: enter the final score (after penalties if needed).</p>
+        <div class="field" style="margin-bottom:1rem;">
+          <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">Match</label>
+          <select id="ko-match" onchange="onKnockoutMatchChange()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;min-width:260px;width:100%;max-width:420px;"></select>
         </div>
-        <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
-          <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;color:var(--muted);cursor:pointer;"><input type="checkbox" id="ko-clean" style="accent-color:var(--green);"> Clean Sheet (winner)</label>
-          <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;color:var(--muted);cursor:pointer;"><input type="checkbox" id="ko-hat" style="accent-color:var(--green);"> Hat Trick (winner)</label>
-          <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;color:var(--muted);cursor:pointer;"><input type="checkbox" id="ko-upset" style="accent-color:var(--green);"> ⚡ Upset Bonus (+5)</label>
+        <div id="ko-team-rows" style="display:none;margin-bottom:1rem;">
+          <div id="ko-team1-row" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:0.5rem;flex-wrap:wrap;">
+            <span id="ko-team1-name" style="font-weight:600;min-width:140px;"></span>
+            <div class="field" style="margin:0;">
+              <label style="font-size:0.65rem;color:var(--muted);display:block;margin-bottom:0.2rem;">Score</label>
+              <input id="ko-team1-score" type="number" min="0" max="20" value="0" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:0.4rem 0.5rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.9rem;width:60px;outline:none;text-align:center;">
+            </div>
+            <label style="display:flex;align-items:center;gap:0.35rem;font-size:0.8rem;color:var(--muted);cursor:pointer;"><input type="checkbox" id="ko-team1-hat" style="accent-color:var(--green);"> 🎩 Hat Trick</label>
+          </div>
+          <div id="ko-team2-row" style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:0.5rem;flex-wrap:wrap;">
+            <span id="ko-team2-name" style="font-weight:600;min-width:140px;"></span>
+            <div class="field" style="margin:0;">
+              <label style="font-size:0.65rem;color:var(--muted);display:block;margin-bottom:0.2rem;">Score</label>
+              <input id="ko-team2-score" type="number" min="0" max="20" value="0" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:0.4rem 0.5rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.9rem;width:60px;outline:none;text-align:center;">
+            </div>
+            <label style="display:flex;align-items:center;gap:0.35rem;font-size:0.8rem;color:var(--muted);cursor:pointer;"><input type="checkbox" id="ko-team2-hat" style="accent-color:var(--green);"> 🎩 Hat Trick</label>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.75rem;margin-top:0.75rem;flex-wrap:wrap;">
+            <div class="field" style="margin:0;">
+              <label style="font-size:0.65rem;color:var(--muted);display:block;margin-bottom:0.2rem;">Winner (if score is tied — PKs)</label>
+              <select id="ko-winner-override" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:0.4rem 0.5rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;min-width:160px;"><option value="">— auto from score —</option></select>
+            </div>
+            <label style="display:flex;align-items:center;gap:0.35rem;font-size:0.8rem;color:var(--muted);cursor:pointer;"><input type="checkbox" id="ko-upset" style="accent-color:var(--green);"> ⚡ Upset (+5)</label>
+          </div>
         </div>
         <button class="btn" onclick="logKnockoutResult()">Log Knockout Result</button>
       </div>
@@ -1717,7 +1734,7 @@ function renderLeaderboard() {
       </div>`;
     }).join('');
 
-    const trophyBadges = renderTrophyBadges(allTrophies[s.manager]);
+    const trophyBadges = renderTrophyBadges(allTrophies[s.manager], s.manager);
 
     return `<div class="lb-card rank-${i+1}">
       <div class="lb-header" onclick="toggleExpand(this.parentElement)">
@@ -1736,7 +1753,6 @@ function renderLeaderboard() {
         <div class="lb-expand">▾</div>
       </div>
       ${trophyBadges}
-      ${renderHaikuCard(s.manager)}
       <div class="lb-detail">
         <div class="lb-team-rows">${teamRows || '<div style="color:var(--muted);font-size:0.85rem;">No teams drafted yet</div>'}</div>
       </div>
@@ -1963,45 +1979,83 @@ function populateKnockoutMatchDropdown() {
       const { team1, team2 } = resolveBracketMatch(m);
       return `<option value="${m.id}">${stageLabel[m.stage]} · M${m.id} · ${team1} vs ${team2}</option>`;
     }).join('');
-  onKnockoutMatchChange();
+  // Hide team rows until a match is picked
+  const rows = document.getElementById('ko-team-rows');
+  if (rows) rows.style.display = 'none';
 }
 
 function onKnockoutMatchChange() {
   const matchId = parseInt(document.getElementById('ko-match').value, 10);
-  const winnerSel = document.getElementById('ko-winner');
-  if (!winnerSel) return;
+  const rowsContainer = document.getElementById('ko-team-rows');
   if (!matchId) {
-    winnerSel.innerHTML = '<option value="">--</option>';
+    if (rowsContainer) rowsContainer.style.display = 'none';
     return;
   }
   const m = KNOCKOUT_BRACKET.find(x => x.id === matchId);
-  if (!m) { winnerSel.innerHTML = '<option value="">--</option>'; return; }
+  if (!m) { if (rowsContainer) rowsContainer.style.display = 'none'; return; }
   const { team1, team2 } = resolveBracketMatch(m);
-  winnerSel.innerHTML = `<option value="">-- winner --</option>
-    <option value="${team1}">${team1}</option>
-    <option value="${team2}">${team2}</option>`;
+  const t1Flag = team1 ? (ALL_TEAMS.find(t => t.name === team1)?.flag || '') : '';
+  const t2Flag = team2 ? (ALL_TEAMS.find(t => t.name === team2)?.flag || '') : '';
+  document.getElementById('ko-team1-name').innerHTML = `${t1Flag} ${team1}`;
+  document.getElementById('ko-team2-name').innerHTML = `${t2Flag} ${team2}`;
+  document.getElementById('ko-team1-score').value = 0;
+  document.getElementById('ko-team2-score').value = 0;
+  document.getElementById('ko-team1-hat').checked = false;
+  document.getElementById('ko-team2-hat').checked = false;
+  document.getElementById('ko-upset').checked = false;
+  const override = document.getElementById('ko-winner-override');
+  override.innerHTML = `<option value="">— auto from score —</option>
+    <option value="${team1}">${team1} (PK win)</option>
+    <option value="${team2}">${team2} (PK win)</option>`;
+  override.value = '';
+  rowsContainer.style.display = '';
 }
 
 async function logKnockoutResult() {
   const matchId = parseInt(document.getElementById('ko-match').value, 10);
-  const winner = document.getElementById('ko-winner').value;
-  if (!matchId || !winner) return toast("Select match and winner");
+  if (!matchId) return toast("Select a match");
   const m = KNOCKOUT_BRACKET.find(x => x.id === matchId);
   if (!m) return toast("Invalid match");
   const { team1, team2 } = resolveBracketMatch(m);
-  const loser = winner === team1 ? team2 : team1;
-  const clean1 = document.getElementById('ko-clean').checked;
-  const hat1 = document.getElementById('ko-hat').checked;
+  const s1 = parseInt(document.getElementById('ko-team1-score').value, 10) || 0;
+  const s2 = parseInt(document.getElementById('ko-team2-score').value, 10) || 0;
+  const hat1 = document.getElementById('ko-team1-hat').checked;
+  const hat2 = document.getElementById('ko-team2-hat').checked;
   const upset = document.getElementById('ko-upset').checked;
-  const wRank = getRankForTeam(winner);
-  const lRank = getRankForTeam(loser);
+  const override = document.getElementById('ko-winner-override').value;
+
+  // Determine winner: from score, or override if tied (penalties)
+  let winner, loser, winnerScore, loserScore, winnerHat, loserHat;
+  if (s1 === s2) {
+    if (!override) return toast("Score is tied — pick PK winner");
+    winner = override;
+    loser = override === team1 ? team2 : team1;
+    winnerScore = override === team1 ? s1 : s2;
+    loserScore = override === team1 ? s2 : s1;
+    winnerHat = override === team1 ? hat1 : hat2;
+    loserHat = override === team1 ? hat2 : hat1;
+  } else if (s1 > s2) {
+    winner = team1; loser = team2;
+    winnerScore = s1; loserScore = s2;
+    winnerHat = hat1; loserHat = hat2;
+  } else {
+    winner = team2; loser = team1;
+    winnerScore = s2; loserScore = s1;
+    winnerHat = hat2; loserHat = hat1;
+  }
+  const cleanWinner = loserScore === 0;
+  const cleanLoser = winnerScore === 0; // possible in PK scenarios (0-0 then PKs)
+
   const entry = {
     team1: winner, team2: loser, stage: m.stage, result: 'win',
-    rank1: wRank, rank2: lRank,
-    clean1, clean2: false, hattrick1: hat1, hattrick2: false,
+    rank1: getRankForTeam(winner), rank2: getRankForTeam(loser),
+    clean1: cleanWinner, clean2: cleanLoser,
+    hattrick1: winnerHat, hattrick2: loserHat,
     advance1: false, advance2: false,
     upset, biggestUpset: false,
     goldenBoot: null, goldenGlove: null,
+    scoreT1: winnerScore, scoreT2: loserScore,
+    totalGoals: winnerScore + loserScore,
     bracketMatchId: matchId
   };
   const res = await api("logResult", { result: entry });
@@ -3680,7 +3734,7 @@ const MANAGER_HAIKUS = {
   "AK47":       "Curaçao, last pick\nSeven-nil, then nil-nil. Bold.\nSpain alone redeems",
   "Pizza":      "Brazil delivers\nIraq and Iran together\nscored zero, combined",
   "Corbin":     "Argentina prays\nJordan, Panama, others\nall came home early",
-  "Nate Dawg":  "Six teams advancing\nZero theatrics or pulse\nBoring, and ahead"
+  "Nate Dawg":  "Seven teams alive still\nZero theatrics or pulse\nBoring, and ahead"
 };
 
 function renderHaikuCard(manager) {
@@ -3695,10 +3749,12 @@ function renderHaikuCard(manager) {
   </div>`;
 }
 
-function renderTrophyBadges(trophySet) {
-  if (!trophySet || trophySet.size === 0) return '';
+function renderTrophyBadges(trophySet, manager) {
+  const haikuHtml = manager ? renderHaikuCard(manager) : '';
+  if ((!trophySet || trophySet.size === 0) && !haikuHtml) return '';
   return '<div class="trophy-row">' +
-    [...trophySet].map(key => {
+    haikuHtml +
+    [...(trophySet || [])].map(key => {
       const def = TROPHY_DEFS[key];
       if (!def) return '';
       return `<span class="trophy-badge" onclick="toggleTrophy(this)">
