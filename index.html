@@ -875,7 +875,6 @@
   <div class="tab" onclick="showTab('pastresults')">Past Results</div>
   <div class="tab" onclick="showTab('scoring')">Scoring</div>
   <div class="tab" onclick="showTab('draft')">Draft Results</div>
-  <div class="tab" onclick="showTab('results')">Enter Results</div>
   <div class="tab" onclick="showTab('countdown')">Countdown</div>
 </div>
 
@@ -927,7 +926,10 @@
 
   <!-- LEADERBOARD -->
   <div class="panel" id="panel-leaderboard">
-    <div class="section-title">Live <span>Leaderboard</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+      <div class="section-title" style="margin-bottom:0;">Live <span>Leaderboard</span></div>
+      <button class="group-btn" onclick="showTab('results')" style="font-size:0.7rem;letter-spacing:0.08em;">Admin</button>
+    </div>
     <div class="leaderboard" id="leaderboard"></div>
   </div>
 
@@ -946,85 +948,18 @@
 
     <div id="results-form-area" style="display:none;">
 
-      <!-- MATCH RESULT ENTRY -->
-      <div class="results-form" style="margin-bottom:1rem;">
-        <h3>Log a Group Stage Result</h3>
-        <div class="field" style="margin-bottom:1rem;">
-          <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">Select Game</label>
-          <select id="res-game-select" onchange="onGameSelect()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;width:100%;max-width:500px;">
-            <option value="">-- pick a game --</option>
-          </select>
-        </div>
-
-        <div id="res-game-detail" style="display:none;">
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:0.9rem 1rem;margin-bottom:1rem;">
-            <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;">
-              <div style="display:flex;flex-direction:column;align-items:center;gap:0.3rem;flex:1;min-width:120px;">
-                <div id="res-home-flag" style="font-size:2rem;"></div>
-                <div id="res-home-name" style="font-weight:600;font-size:0.9rem;text-align:center;"></div>
-                <div id="res-home-mgr" style="font-size:0.7rem;color:var(--green);"></div>
-                <input type="number" id="res-score-home" min="0" max="20" placeholder="0"
-                  style="width:64px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.5rem;color:var(--text);font-family:'Bebas Neue',sans-serif;font-size:1.8rem;outline:none;"
-                  oninput="onScoreChange()">
-                <button id="res-hat-home" class="btn-ghost" onclick="toggleHat('home')" style="font-size:0.72rem;padding:0.3rem 0.6rem;">🎩 Hat Trick</button>
-              </div>
-              <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--muted);">VS</div>
-              <div style="display:flex;flex-direction:column;align-items:center;gap:0.3rem;flex:1;min-width:120px;">
-                <div id="res-away-flag" style="font-size:2rem;"></div>
-                <div id="res-away-name" style="font-weight:600;font-size:0.9rem;text-align:center;"></div>
-                <div id="res-away-mgr" style="font-size:0.7rem;color:var(--green);"></div>
-                <input type="number" id="res-score-away" min="0" max="20" placeholder="0"
-                  style="width:64px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.5rem;color:var(--text);font-family:'Bebas Neue',sans-serif;font-size:1.8rem;outline:none;"
-                  oninput="onScoreChange()">
-                <button id="res-hat-away" class="btn-ghost" onclick="toggleHat('away')" style="font-size:0.72rem;padding:0.3rem 0.6rem;">🎩 Hat Trick</button>
-              </div>
-            </div>
-            <div id="res-inferred" style="margin-top:0.75rem;font-size:0.78rem;color:var(--muted);text-align:center;min-height:1.2em;"></div>
-          </div>
-          <div id="res-upset-inferred" style="display:none;margin-top:0.5rem;padding:0.4rem 0.75rem;background:var(--surface2);border:1px solid var(--gold);border-radius:6px;font-size:0.78rem;color:var(--gold);width:fit-content;">
-            ⚡ Upset Bonus will be auto-applied (+5)
-          </div>
-          <div style="margin-top:1rem;">
-            <button class="btn" onclick="logGroupResult()">Log Result</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- GROUP STAGE ADVANCEMENT -->
-      <div class="results-form" style="margin-bottom:1rem;">
-        <h3>Group Stage Status</h3>
-        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">Mark a team as advanced (+3 pts) or eliminated once group standings are final. This determines what shows on the Leaderboard, Teams, and Draft Results pages.</p>
-        <div style="display:flex;gap:0.75rem;align-items:flex-end;flex-wrap:wrap;">
-          <div class="field">
-            <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">Team</label>
-            <select id="res-advance-team" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;min-width:200px;"></select>
-          </div>
-          <button class="btn" onclick="logAdvance()">✅ Mark Advanced (+3)</button>
-          <button class="btn" style="background:var(--surface2);border:1px solid #c0392b;color:#e74c3c;" onclick="logElimination()">❌ Mark Eliminated</button>
-        </div>
-      </div>
-
       <!-- KNOCKOUT RESULT ENTRY -->
       <div class="results-form" style="margin-bottom:1rem;">
         <h3>Log a Knockout Result</h3>
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">Pick a bracket match — winners auto-populate the next round.</p>
         <div style="display:flex;gap:0.75rem;align-items:flex-end;flex-wrap:wrap;margin-bottom:0.75rem;">
           <div class="field">
-            <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">Stage</label>
-            <select id="ko-stage" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;">
-              <option value="r32">Round of 32</option>
-              <option value="r16">Round of 16</option>
-              <option value="qf">Quarterfinal</option>
-              <option value="sf">Semifinal</option>
-              <option value="final">Final</option>
-            </select>
+            <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">Match</label>
+            <select id="ko-match" onchange="onKnockoutMatchChange()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;min-width:260px;"></select>
           </div>
           <div class="field">
             <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">Winner</label>
             <select id="ko-winner" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;min-width:160px;"></select>
-          </div>
-          <div class="field">
-            <label style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.3rem;">Loser</label>
-            <select id="ko-loser" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;min-width:160px;"></select>
           </div>
         </div>
         <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
@@ -1160,7 +1095,11 @@
   <!-- SCHEDULE -->
   <div class="panel active" id="panel-schedule">
     <div class="section-title">Upcoming <span>Schedule</span></div>
-    <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+    <div style="display:flex;gap:0.5rem;margin-bottom:0.6rem;">
+      <div class="group-btn active" id="sv-list" onclick="setScheduleView('list', this)">List View</div>
+      <div class="group-btn" id="sv-bracket" onclick="setScheduleView('bracket', this)">Bracket View</div>
+    </div>
+    <div id="schedule-list-controls" style="display:flex;gap:0.5rem;margin-bottom:1rem;">
       <div class="group-btn active" id="sf-all" onclick="setScheduleFilter('all', this)">All</div>
       <div class="group-btn" id="sf-manager" onclick="setScheduleFilter('manager', this)">By Manager</div>
     </div>
@@ -1170,6 +1109,7 @@
       </select>
     </div>
     <div id="schedule-list"></div>
+    <div id="schedule-bracket" style="display:none;"></div>
   </div>
 
   <!-- PAST RESULTS -->
@@ -1966,26 +1906,74 @@ async function logElimination() {
   if (res?.ok) { toast(`${team} marked eliminated (Group Stage)`); renderResultLog(); updateHeaderLeader(); }
 }
 
+function populateKnockoutMatchDropdown() {
+  const sel = document.getElementById('ko-match');
+  if (!sel) return;
+  // Find all bracket matches where both teams are determined but no result is logged yet
+  const eligible = KNOCKOUT_BRACKET.filter(m => {
+    const { team1, team2 } = resolveBracketMatch(m);
+    if (!team1 || !team2) return false;
+    const alreadyLogged = state.results.some(r =>
+      !r.globle && !r.isAdvance && !r.isAwards && !r.isElimination &&
+      r.stage === m.stage &&
+      ((r.team1 === team1 && r.team2 === team2) || (r.team1 === team2 && r.team2 === team1))
+    );
+    return !alreadyLogged;
+  });
+  const stageLabel = { r32:"R32", r16:"R16", qf:"QF", sf:"SF", third:"3rd Place", final:"Final" };
+  sel.innerHTML = '<option value="">-- select match --</option>' +
+    eligible.map(m => {
+      const { team1, team2 } = resolveBracketMatch(m);
+      return `<option value="${m.id}">${stageLabel[m.stage]} · M${m.id} · ${team1} vs ${team2}</option>`;
+    }).join('');
+  onKnockoutMatchChange();
+}
+
+function onKnockoutMatchChange() {
+  const matchId = parseInt(document.getElementById('ko-match').value, 10);
+  const winnerSel = document.getElementById('ko-winner');
+  if (!winnerSel) return;
+  if (!matchId) {
+    winnerSel.innerHTML = '<option value="">--</option>';
+    return;
+  }
+  const m = KNOCKOUT_BRACKET.find(x => x.id === matchId);
+  if (!m) { winnerSel.innerHTML = '<option value="">--</option>'; return; }
+  const { team1, team2 } = resolveBracketMatch(m);
+  winnerSel.innerHTML = `<option value="">-- winner --</option>
+    <option value="${team1}">${team1}</option>
+    <option value="${team2}">${team2}</option>`;
+}
+
 async function logKnockoutResult() {
-  const stage = document.getElementById('ko-stage').value;
+  const matchId = parseInt(document.getElementById('ko-match').value, 10);
   const winner = document.getElementById('ko-winner').value;
-  const loser = document.getElementById('ko-loser').value;
-  if (!winner || !loser || winner === loser) return toast("Select winner and loser");
+  if (!matchId || !winner) return toast("Select match and winner");
+  const m = KNOCKOUT_BRACKET.find(x => x.id === matchId);
+  if (!m) return toast("Invalid match");
+  const { team1, team2 } = resolveBracketMatch(m);
+  const loser = winner === team1 ? team2 : team1;
   const clean1 = document.getElementById('ko-clean').checked;
   const hat1 = document.getElementById('ko-hat').checked;
   const upset = document.getElementById('ko-upset').checked;
   const wRank = getRankForTeam(winner);
   const lRank = getRankForTeam(loser);
   const entry = {
-    team1: winner, team2: loser, stage, result: 'win',
+    team1: winner, team2: loser, stage: m.stage, result: 'win',
     rank1: wRank, rank2: lRank,
     clean1, clean2: false, hattrick1: hat1, hattrick2: false,
     advance1: false, advance2: false,
     upset, biggestUpset: false,
-    goldenBoot: null, goldenGlove: null
+    goldenBoot: null, goldenGlove: null,
+    bracketMatchId: matchId
   };
   const res = await api("logResult", { result: entry });
-  if (res?.ok) { toast("Knockout result logged!"); renderResultLog(); updateHeaderLeader(); }
+  if (res?.ok) {
+    toast(`${winner} advances! Bracket updated.`);
+    renderResultLog();
+    updateHeaderLeader();
+    populateKnockoutMatchDropdown();
+  }
 }
 
 async function logAwards() {
@@ -2017,7 +2005,7 @@ async function logAwards() {
 function populateTeamSelects() {
   const opts = '<option value="">-- select --</option>' +
     ALL_TEAMS.map(t => `<option value="${t.name}">${t.flag} ${t.name}</option>`).join('');
-  ['award-golden-boot','award-golden-ball','award-golden-glove','award-young-player','award-biggest-upset-team','res-advance-team','ko-winner','ko-loser','globle-team'].forEach(id => {
+  ['award-golden-boot','award-golden-ball','award-golden-glove','award-young-player','award-biggest-upset-team','globle-team'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = opts;
   });
@@ -2272,47 +2260,113 @@ const GROUP_SCHEDULE = [
 ];
 
 // Knockout placeholders — teams TBD after group stage
-const KNOCKOUT_SCHEDULE = [
-  // Round of 32 — June 28 to July 3
-  {date:"2026-06-28",time:"3:00 PM ET",home:"TBD",away:"TBD",venue:"Inglewood",stage:"r32",label:"R32: Grp A 2nd vs Grp B 2nd",sortKey:"2026-06-28 15:00"},
-  {date:"2026-06-29",time:"1:00 PM ET",home:"TBD",away:"TBD",venue:"Houston",stage:"r32",label:"R32: Grp C Win vs Grp F 2nd",sortKey:"2026-06-29 13:00"},
-  {date:"2026-06-29",time:"4:30 PM ET",home:"TBD",away:"TBD",venue:"Foxborough",stage:"r32",label:"R32: Grp E Win vs 3rd place",sortKey:"2026-06-29 16:30"},
-  {date:"2026-06-29",time:"9:00 PM ET",home:"TBD",away:"TBD",venue:"Zapopan",stage:"r32",label:"R32: Grp F Win vs Grp C 2nd",sortKey:"2026-06-29 21:00"},
-  {date:"2026-06-30",time:"1:00 PM ET",home:"TBD",away:"TBD",venue:"Arlington",stage:"r32",label:"R32: Grp E 2nd vs Grp I 2nd",sortKey:"2026-06-30 13:00"},
-  {date:"2026-06-30",time:"5:00 PM ET",home:"TBD",away:"TBD",venue:"East Rutherford",stage:"r32",label:"R32: Grp I Win vs 3rd place",sortKey:"2026-06-30 17:00"},
-  {date:"2026-06-30",time:"9:00 PM ET",home:"TBD",away:"TBD",venue:"Mexico City",stage:"r32",label:"R32: Grp A Win vs 3rd place",sortKey:"2026-06-30 21:00"},
-  {date:"2026-07-01",time:"12:00 PM ET",home:"TBD",away:"TBD",venue:"Atlanta",stage:"r32",label:"R32: Grp L Win vs 3rd place",sortKey:"2026-07-01 12:00"},
-  {date:"2026-07-01",time:"4:00 PM ET",home:"TBD",away:"TBD",venue:"Seattle",stage:"r32",label:"R32: Grp G Win vs 3rd place",sortKey:"2026-07-01 16:00"},
-  {date:"2026-07-01",time:"8:00 PM ET",home:"TBD",away:"TBD",venue:"Santa Clara",stage:"r32",label:"R32: Grp D Win vs 3rd place",sortKey:"2026-07-01 20:00"},
-  {date:"2026-07-02",time:"3:00 PM ET",home:"TBD",away:"TBD",venue:"Inglewood",stage:"r32",label:"R32: Grp H Win vs Grp J 2nd",sortKey:"2026-07-02 15:00"},
-  {date:"2026-07-02",time:"7:00 PM ET",home:"TBD",away:"TBD",venue:"Toronto",stage:"r32",label:"R32: Grp K 2nd vs Grp L 2nd",sortKey:"2026-07-02 19:00"},
-  {date:"2026-07-02",time:"11:00 PM ET",home:"TBD",away:"TBD",venue:"Vancouver",stage:"r32",label:"R32: Grp B Win vs 3rd place",sortKey:"2026-07-02 23:00"},
-  {date:"2026-07-03",time:"2:00 PM ET",home:"TBD",away:"TBD",venue:"Arlington",stage:"r32",label:"R32: Grp D 2nd vs Grp G 2nd",sortKey:"2026-07-03 14:00"},
-  {date:"2026-07-03",time:"6:00 PM ET",home:"TBD",away:"TBD",venue:"Miami Gardens",stage:"r32",label:"R32: Grp J Win vs Grp H 2nd",sortKey:"2026-07-03 18:00"},
-  {date:"2026-07-03",time:"9:30 PM ET",home:"TBD",away:"TBD",venue:"Kansas City",stage:"r32",label:"R32: Grp K Win vs 3rd place",sortKey:"2026-07-03 21:30"},
-  // Round of 16 — July 4-7
-  {date:"2026-07-04",time:"1:00 PM ET",home:"TBD",away:"TBD",venue:"Houston",stage:"r16",label:"R16 Match 1",sortKey:"2026-07-04 13:00"},
-  {date:"2026-07-04",time:"5:00 PM ET",home:"TBD",away:"TBD",venue:"Philadelphia",stage:"r16",label:"R16 Match 2",sortKey:"2026-07-04 17:00"},
-  {date:"2026-07-05",time:"4:00 PM ET",home:"TBD",away:"TBD",venue:"East Rutherford",stage:"r16",label:"R16 Match 3",sortKey:"2026-07-05 16:00"},
-  {date:"2026-07-05",time:"8:00 PM ET",home:"TBD",away:"TBD",venue:"Mexico City",stage:"r16",label:"R16 Match 4",sortKey:"2026-07-05 20:00"},
-  {date:"2026-07-06",time:"3:00 PM ET",home:"TBD",away:"TBD",venue:"Arlington",stage:"r16",label:"R16 Match 5",sortKey:"2026-07-06 15:00"},
-  {date:"2026-07-06",time:"5:00 PM ET",home:"TBD",away:"TBD",venue:"Seattle",stage:"r16",label:"R16 Match 6",sortKey:"2026-07-06 17:00"},
-  {date:"2026-07-07",time:"12:00 PM ET",home:"TBD",away:"TBD",venue:"Atlanta",stage:"r16",label:"R16 Match 7",sortKey:"2026-07-07 12:00"},
-  {date:"2026-07-07",time:"4:00 PM ET",home:"TBD",away:"TBD",venue:"Vancouver",stage:"r16",label:"R16 Match 8",sortKey:"2026-07-07 16:00"},
-  // Quarterfinals — July 9-11
-  {date:"2026-07-09",time:"4:00 PM ET",home:"TBD",away:"TBD",venue:"Foxborough",stage:"qf",label:"Quarterfinal 1",sortKey:"2026-07-09 16:00"},
-  {date:"2026-07-10",time:"3:00 PM ET",home:"TBD",away:"TBD",venue:"Inglewood",stage:"qf",label:"Quarterfinal 2",sortKey:"2026-07-10 15:00"},
-  {date:"2026-07-11",time:"5:00 PM ET",home:"TBD",away:"TBD",venue:"Miami Gardens",stage:"qf",label:"Quarterfinal 3",sortKey:"2026-07-11 17:00"},
-  {date:"2026-07-11",time:"9:00 PM ET",home:"TBD",away:"TBD",venue:"Kansas City",stage:"qf",label:"Quarterfinal 4",sortKey:"2026-07-11 21:00"},
-  // Semifinals — July 14-15
-  {date:"2026-07-14",time:"3:00 PM ET",home:"TBD",away:"TBD",venue:"Arlington",stage:"sf",label:"Semifinal 1",sortKey:"2026-07-14 15:00"},
-  {date:"2026-07-15",time:"3:00 PM ET",home:"TBD",away:"TBD",venue:"Atlanta",stage:"sf",label:"Semifinal 2",sortKey:"2026-07-15 15:00"},
-  // Third place + Final
-  {date:"2026-07-18",time:"5:00 PM ET",home:"TBD",away:"TBD",venue:"Miami Gardens",stage:"sf",label:"Third Place Game",sortKey:"2026-07-18 17:00"},
-  {date:"2026-07-19",time:"3:00 PM ET",home:"TBD",away:"TBD",venue:"East Rutherford",stage:"final",label:"World Cup Final",sortKey:"2026-07-19 15:00"},
+const KNOCKOUT_BRACKET = [
+  // Round of 32 (June 28 - July 3) — fixed pairings from the printed bracket
+  {id:73, stage:"r32", date:"2026-06-28", time:"3:00 PM ET", venue:"Inglewood",     team1:"South Africa",  team2:"Canada"},
+  {id:74, stage:"r32", date:"2026-06-28", time:"7:00 PM ET", venue:"Houston",        team1:"Germany",       team2:"Paraguay"},
+  {id:75, stage:"r32", date:"2026-06-29", time:"3:00 PM ET", venue:"Dallas",         team1:"Netherlands",   team2:"Morocco"},
+  {id:76, stage:"r32", date:"2026-06-29", time:"7:00 PM ET", venue:"Atlanta",        team1:"Brazil",        team2:"Japan"},
+  {id:77, stage:"r32", date:"2026-06-29", time:"12:00 PM ET",venue:"Mexico City",    team1:"France",        team2:"Sweden"},
+  {id:78, stage:"r32", date:"2026-06-30", time:"3:00 PM ET", venue:"Toronto",        team1:"Ivory Coast",   team2:"Norway"},
+  {id:79, stage:"r32", date:"2026-06-30", time:"7:00 PM ET", venue:"Guadalajara",    team1:"Mexico",        team2:"Ecuador"},
+  {id:80, stage:"r32", date:"2026-07-01", time:"3:00 PM ET", venue:"Philadelphia",   team1:"England",       team2:"Congo DR"},
+  {id:81, stage:"r32", date:"2026-07-01", time:"7:00 PM ET", venue:"Boston",         team1:"USA",           team2:"Bosnia"},
+  {id:82, stage:"r32", date:"2026-07-01", time:"12:00 PM ET",venue:"Vancouver",      team1:"Belgium",       team2:"Senegal"},
+  {id:83, stage:"r32", date:"2026-07-02", time:"3:00 PM ET", venue:"Seattle",        team1:"Portugal",      team2:"Croatia"},
+  {id:84, stage:"r32", date:"2026-07-02", time:"7:00 PM ET", venue:"Kansas City",    team1:"Spain",         team2:"Austria"},
+  {id:85, stage:"r32", date:"2026-07-02", time:"12:00 PM ET",venue:"Monterrey",      team1:"Switzerland",   team2:"Algeria"},
+  {id:86, stage:"r32", date:"2026-07-03", time:"3:00 PM ET", venue:"Miami",          team1:"Argentina",     team2:"Cabo Verde"},
+  {id:87, stage:"r32", date:"2026-07-03", time:"7:00 PM ET", venue:"East Rutherford",team1:"Colombia",      team2:"Ghana"},
+  {id:88, stage:"r32", date:"2026-07-03", time:"12:00 PM ET",venue:"Mexico City",    team1:"Australia",     team2:"Egypt"},
+  // Round of 16 (July 4 - 7) — feeders reference R32 match IDs (winner of each)
+  {id:89, stage:"r16", date:"2026-07-04", time:"3:00 PM ET", venue:"Boston",      feeds:[74, 77]},
+  {id:90, stage:"r16", date:"2026-07-04", time:"7:00 PM ET", venue:"Atlanta",     feeds:[73, 75]},
+  {id:91, stage:"r16", date:"2026-07-05", time:"3:00 PM ET", venue:"Dallas",      feeds:[76, 78]},
+  {id:92, stage:"r16", date:"2026-07-05", time:"7:00 PM ET", venue:"Inglewood",   feeds:[79, 80]},
+  {id:93, stage:"r16", date:"2026-07-06", time:"3:00 PM ET", venue:"East Rutherford", feeds:[83, 84]},
+  {id:94, stage:"r16", date:"2026-07-06", time:"7:00 PM ET", venue:"Philadelphia",feeds:[81, 82]},
+  {id:95, stage:"r16", date:"2026-07-07", time:"3:00 PM ET", venue:"Miami",       feeds:[86, 88]},
+  {id:96, stage:"r16", date:"2026-07-07", time:"7:00 PM ET", venue:"Kansas City", feeds:[85, 87]},
+  // Quarterfinals (July 9 - 11)
+  {id:97, stage:"qf", date:"2026-07-09", time:"3:00 PM ET", venue:"Boston",     feeds:[89, 90]},
+  {id:98, stage:"qf", date:"2026-07-10", time:"3:00 PM ET", venue:"Dallas",     feeds:[93, 94]},
+  {id:99, stage:"qf", date:"2026-07-10", time:"7:00 PM ET", venue:"Inglewood",  feeds:[91, 92]},
+  {id:100,stage:"qf", date:"2026-07-11", time:"3:00 PM ET", venue:"Atlanta",    feeds:[95, 96]},
+  // Semifinals (July 14 - 15)
+  {id:101,stage:"sf", date:"2026-07-14", time:"3:00 PM ET", venue:"Dallas",         feeds:[97, 98]},
+  {id:102,stage:"sf", date:"2026-07-15", time:"3:00 PM ET", venue:"Atlanta",        feeds:[99, 100]},
+  // 3rd place — July 18
+  {id:103,stage:"third", date:"2026-07-18", time:"3:00 PM ET", venue:"Miami",       feeds:[101, 102], isThirdPlace:true},
+  // Final — July 19
+  {id:104,stage:"final", date:"2026-07-19", time:"3:00 PM ET", venue:"East Rutherford", feeds:[101, 102]},
 ];
 
-const ALL_SCHEDULE = [...GROUP_SCHEDULE, ...KNOCKOUT_SCHEDULE].sort((a,b) => a.sortKey.localeCompare(b.sortKey));
+// Resolve which teams play in a given bracket match based on logged results
+function resolveBracketMatch(match) {
+  if (match.team1 && match.team2) return { team1: match.team1, team2: match.team2 };
+  if (!match.feeds) return { team1: null, team2: null };
+  const [feedA, feedB] = match.feeds;
+  const winnerA = getKnockoutWinner(feedA);
+  const winnerB = getKnockoutWinner(feedB);
+  // 3rd place playoff is between the LOSERS of the semis, not winners
+  if (match.isThirdPlace) {
+    return {
+      team1: getKnockoutLoser(feedA),
+      team2: getKnockoutLoser(feedB)
+    };
+  }
+  return { team1: winnerA, team2: winnerB };
+}
+
+function getKnockoutWinner(matchId) {
+  const m = KNOCKOUT_BRACKET.find(x => x.id === matchId);
+  if (!m) return null;
+  const { team1, team2 } = resolveBracketMatch(m);
+  if (!team1 || !team2) return null;
+  // Find a logged result for this exact pairing (any order) at the correct stage
+  const r = state.results.find(x =>
+    !x.globle && !x.isAdvance && !x.isAwards && !x.isElimination &&
+    x.stage === m.stage && x.result === 'win' &&
+    ((x.team1 === team1 && x.team2 === team2) || (x.team1 === team2 && x.team2 === team1))
+  );
+  return r ? r.team1 : null; // team1 is always the winner in our logging
+}
+
+function getKnockoutLoser(matchId) {
+  const m = KNOCKOUT_BRACKET.find(x => x.id === matchId);
+  if (!m) return null;
+  const { team1, team2 } = resolveBracketMatch(m);
+  if (!team1 || !team2) return null;
+  const r = state.results.find(x =>
+    !x.globle && !x.isAdvance && !x.isAwards && !x.isElimination &&
+    x.stage === m.stage && x.result === 'win' &&
+    ((x.team1 === team1 && x.team2 === team2) || (x.team1 === team2 && x.team2 === team1))
+  );
+  return r ? r.team2 : null;
+}
+
+// Build the legacy-shaped schedule entry for a bracket match (so other code that reads ALL_SCHEDULE still works)
+function bracketToScheduleEntry(m) {
+  const { team1, team2 } = resolveBracketMatch(m);
+  const stageLabel = { r32:"Round of 32", r16:"Round of 16", qf:"Quarterfinal", sf:"Semifinal", third:"Third Place Playoff", final:"World Cup Final" };
+  return {
+    date: m.date, time: m.time,
+    home: team1 || "TBD", away: team2 || "TBD",
+    venue: m.venue, stage: m.stage,
+    label: stageLabel[m.stage] + (m.id ? " · Match " + m.id : ""),
+    sortKey: m.date + " " + (m.time || "").replace(' PM ET','').replace(' AM ET',''),
+    bracketId: m.id,
+    isThirdPlace: !!m.isThirdPlace
+  };
+}
+
+// Generate KNOCKOUT_SCHEDULE dynamically from the bracket
+function buildKnockoutSchedule() {
+  return KNOCKOUT_BRACKET.map(bracketToScheduleEntry);
+}
+
+function getAllSchedule() { return [...GROUP_SCHEDULE, ...buildKnockoutSchedule()].sort((a,b) => a.sortKey.localeCompare(b.sortKey)); }
+const ALL_SCHEDULE = getAllSchedule();
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
@@ -2341,7 +2395,7 @@ function stageName(stage, game) {
     const grp = homeTeam?.group || awayTeam?.group || '?';
     return `Group ${grp}`;
   }
-  const map = { group:'Group Stage', r32:'Round of 32', r16:'Round of 16', qf:'Quarterfinal', sf:'Semifinal', final:'Final' };
+  const map = { group:'Group Stage', r32:'Round of 32', r16:'Round of 16', qf:'Quarterfinal', sf:'Semifinal', third:'3rd Place', final:'Final' };
   return map[stage] || stage;
 }
 
@@ -2371,6 +2425,75 @@ function formatGameDate(dateStr) {
 // ─── SCHEDULE TAB ─────────────────────────────────────────────────────────────
 
 let scheduleFilter = 'all';
+let scheduleView = 'list'; // 'list' or 'bracket'
+
+function setScheduleView(v, el) {
+  scheduleView = v;
+  document.querySelectorAll('#sv-list, #sv-bracket').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  const listEl = document.getElementById('schedule-list');
+  const brEl = document.getElementById('schedule-bracket');
+  const controls = document.getElementById('schedule-list-controls');
+  const mgrRow = document.getElementById('schedule-manager-row');
+  if (v === 'list') {
+    if (listEl) listEl.style.display = '';
+    if (brEl) brEl.style.display = 'none';
+    if (controls) controls.style.display = 'flex';
+    renderSchedule();
+  } else {
+    if (listEl) listEl.style.display = 'none';
+    if (brEl) brEl.style.display = '';
+    if (controls) controls.style.display = 'none';
+    if (mgrRow) mgrRow.style.display = 'none';
+    renderBracket();
+  }
+}
+
+function renderBracket() {
+  const container = document.getElementById('schedule-bracket');
+  if (!container) return;
+
+  const rounds = [
+    { stage: 'r32', title: 'Round of 32' },
+    { stage: 'r16', title: 'Round of 16' },
+    { stage: 'qf', title: 'Quarterfinals' },
+    { stage: 'sf', title: 'Semifinals' },
+    { stage: 'final', title: 'Final' },
+    { stage: 'third', title: '3rd Place Playoff' },
+  ];
+
+  const html = rounds.map(round => {
+    const matches = KNOCKOUT_BRACKET.filter(m => m.stage === round.stage);
+    const matchCards = matches.map(m => {
+      const { team1, team2 } = resolveBracketMatch(m);
+      const t1Flag = team1 ? (ALL_TEAMS.find(t => t.name === team1)?.flag || '') : '';
+      const t2Flag = team2 ? (ALL_TEAMS.find(t => t.name === team2)?.flag || '') : '';
+      const t1Display = team1 || `<span style="color:var(--muted);font-style:italic;">Winner of Match ${m.feeds ? m.feeds[0] : '?'}</span>`;
+      const t2Display = team2 || `<span style="color:var(--muted);font-style:italic;">${m.isThirdPlace ? 'Loser' : 'Winner'} of Match ${m.feeds ? m.feeds[1] : '?'}</span>`;
+      const winner = (team1 && team2) ? getKnockoutWinner(m.id) : null;
+      const winnerTeam1 = winner === team1;
+      const winnerTeam2 = winner === team2;
+      const dateInfo = formatGameDate(m.date);
+      return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.7rem;margin-bottom:0.5rem;">
+        <div style="font-size:0.6rem;color:var(--muted);letter-spacing:0.08em;margin-bottom:0.35rem;">MATCH ${m.id} · ${dateInfo.month} ${dateInfo.day}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:0.15rem 0;font-size:0.85rem;${winnerTeam1 ? 'color:var(--green);font-weight:600;' : winner ? 'color:var(--muted);text-decoration:line-through;' : ''}">
+          <span>${t1Flag} ${t1Display}</span>
+          ${winnerTeam1 ? '<span style="color:var(--gold);font-size:0.7rem;">✓</span>' : ''}
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:0.15rem 0;font-size:0.85rem;${winnerTeam2 ? 'color:var(--green);font-weight:600;' : winner ? 'color:var(--muted);text-decoration:line-through;' : ''}">
+          <span>${t2Flag} ${t2Display}</span>
+          ${winnerTeam2 ? '<span style="color:var(--gold);font-size:0.7rem;">✓</span>' : ''}
+        </div>
+      </div>`;
+    }).join('');
+    return `<div style="margin-bottom:1.25rem;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.15rem;color:var(--gold);letter-spacing:0.06em;margin-bottom:0.55rem;">${round.title}</div>
+      ${matchCards}
+    </div>`;
+  }).join('');
+
+  container.innerHTML = html;
+}
 
 function setScheduleFilter(f, el) {
   scheduleFilter = f;
@@ -2395,7 +2518,7 @@ function renderSchedule() {
   const container = document.getElementById('schedule-list');
   if (!container) return;
 
-  const upcoming = ALL_SCHEDULE.filter(g => !isPlayedGame(g) && isUpcomingGame(g));
+  const upcoming = getAllSchedule().filter(g => !isPlayedGame(g) && isUpcomingGame(g));
   let filtered = upcoming;
   if (scheduleFilter === 'manager') {
     const sel = document.getElementById('schedule-manager-select');
@@ -2487,7 +2610,7 @@ function renderPastResults() {
     const homeMgr = getManagerForTeam(r.team1);
     const awayMgr = getManagerForTeam(r.team2);
     // Find the scheduled game to get date and venue
-    const scheduledGame = ALL_SCHEDULE.find(g =>
+    const scheduledGame = getAllSchedule().find(g =>
       (g.home === r.team1 && g.away === r.team2) ||
       (g.home === r.team2 && g.away === r.team1)
     );
@@ -3067,7 +3190,7 @@ mgrs.forEach(m => { cleanSheetCount[m] = 0; groupGoals[m] = 0; drawCount[m] = 0;
 
       // Host city wins
       const venue = (r.venue || '').toLowerCase();
-      const game = ALL_SCHEDULE.find(g =>
+      const game = getAllSchedule().find(g =>
         (g.home === r.team1 && g.away === r.team2) ||
         (g.home === r.team2 && g.away === r.team1)
       );
@@ -3563,6 +3686,7 @@ function updateHeaderLeader() {
 function renderAll() {
   try { renderSetup(); } catch(e) { console.warn('renderSetup error', e); }
   try { renderSchedule(); } catch(e) { console.warn('renderSchedule error', e); }
+  try { renderBracket(); } catch(e) { console.warn('renderBracket error', e); }
   try { renderLeaderboard(); } catch(e) { console.warn('renderLeaderboard error', e); }
   try { renderCountdown(); } catch(e) { console.warn('renderCountdown error', e); }
   try { renderDraftResults(); } catch(e) { console.warn('renderDraftResults error', e); }
@@ -3570,6 +3694,7 @@ function renderAll() {
   try { renderTeamsBreakdown(); } catch(e) { console.warn('renderTeamsBreakdown error', e); }
   try { populateResultTeams(); } catch(e) { console.warn('populateResultTeams error', e); }
   try { populateAwardSelects(); } catch(e) { console.warn('populateAwardSelects error', e); }
+  try { populateKnockoutMatchDropdown(); } catch(e) { console.warn('populateKnockoutMatchDropdown error', e); }
   try { populateGameSelect(); } catch(e) { console.warn('populateGameSelect error', e); }
   try { populateTeamSelects(); } catch(e) { console.warn('populateTeamSelects error', e); }
   try { renderResultLog(); } catch(e) { console.warn('renderResultLog error', e); }
@@ -3592,4 +3717,4 @@ async function init() {
 init();
 </script>
 </body>
-</html
+</html>
