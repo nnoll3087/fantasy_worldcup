@@ -1689,11 +1689,11 @@ function wrapEliminatedName(teamName, displayHtml) {
 
 function gamesPlayedForMgr(manager) {
   const teams = state.picks[manager] || [];
-  // Count team APPEARANCES, not result rows — if a manager owns both teams
-  // in a single match (e.g. Netherlands vs Japan), that's 2 games played, not 1.
+  // Count team APPEARANCES across ALL real match results (group + knockout).
+  // If a manager owns both teams in a single match, that's 2 games played, not 1.
   let count = 0;
   state.results.forEach(r => {
-    if (r.globle || r.isAdvance || r.isAwards || r.isElimination || r.stage !== 'group') return;
+    if (r.globle || r.isAdvance || r.isAwards || r.isElimination) return;
     if (teams.includes(r.team1)) count++;
     if (r.team2 && teams.includes(r.team2)) count++;
   });
@@ -2352,44 +2352,44 @@ const GROUP_SCHEDULE = [
 
 // Knockout placeholders — teams TBD after group stage
 const KNOCKOUT_BRACKET = [
-  // Round of 32 (June 28 - July 3) — fixed pairings from the printed bracket
-  {id:73, stage:"r32", date:"2026-06-28", time:"3:00 PM ET", venue:"Inglewood",     team1:"South Africa",  team2:"Canada"},
-  {id:74, stage:"r32", date:"2026-06-28", time:"7:00 PM ET", venue:"Houston",        team1:"Germany",       team2:"Paraguay"},
-  {id:75, stage:"r32", date:"2026-06-29", time:"3:00 PM ET", venue:"Dallas",         team1:"Netherlands",   team2:"Morocco"},
-  {id:76, stage:"r32", date:"2026-06-29", time:"7:00 PM ET", venue:"Atlanta",        team1:"Brazil",        team2:"Japan"},
-  {id:77, stage:"r32", date:"2026-06-29", time:"12:00 PM ET",venue:"Mexico City",    team1:"France",        team2:"Sweden"},
-  {id:78, stage:"r32", date:"2026-06-30", time:"3:00 PM ET", venue:"Toronto",        team1:"Ivory Coast",   team2:"Norway"},
-  {id:79, stage:"r32", date:"2026-06-30", time:"7:00 PM ET", venue:"Guadalajara",    team1:"Mexico",        team2:"Ecuador"},
-  {id:80, stage:"r32", date:"2026-07-01", time:"3:00 PM ET", venue:"Philadelphia",   team1:"England",       team2:"Congo DR"},
-  {id:81, stage:"r32", date:"2026-07-01", time:"7:00 PM ET", venue:"Boston",         team1:"USA",           team2:"Bosnia"},
-  {id:82, stage:"r32", date:"2026-07-01", time:"12:00 PM ET",venue:"Vancouver",      team1:"Belgium",       team2:"Senegal"},
-  {id:83, stage:"r32", date:"2026-07-02", time:"3:00 PM ET", venue:"Seattle",        team1:"Portugal",      team2:"Croatia"},
-  {id:84, stage:"r32", date:"2026-07-02", time:"7:00 PM ET", venue:"Kansas City",    team1:"Spain",         team2:"Austria"},
-  {id:85, stage:"r32", date:"2026-07-02", time:"12:00 PM ET",venue:"Monterrey",      team1:"Switzerland",   team2:"Algeria"},
-  {id:86, stage:"r32", date:"2026-07-03", time:"3:00 PM ET", venue:"Miami",          team1:"Argentina",     team2:"Cabo Verde"},
-  {id:87, stage:"r32", date:"2026-07-03", time:"7:00 PM ET", venue:"East Rutherford",team1:"Colombia",      team2:"Ghana"},
-  {id:88, stage:"r32", date:"2026-07-03", time:"12:00 PM ET",venue:"Mexico City",    team1:"Australia",     team2:"Egypt"},
-  // Round of 16 (July 4 - 7) — feeders reference R32 match IDs (winner of each)
-  {id:89, stage:"r16", date:"2026-07-04", time:"3:00 PM ET", venue:"Boston",      feeds:[74, 77]},
-  {id:90, stage:"r16", date:"2026-07-04", time:"7:00 PM ET", venue:"Atlanta",     feeds:[73, 75]},
-  {id:91, stage:"r16", date:"2026-07-05", time:"3:00 PM ET", venue:"Dallas",      feeds:[76, 78]},
-  {id:92, stage:"r16", date:"2026-07-05", time:"7:00 PM ET", venue:"Inglewood",   feeds:[79, 80]},
-  {id:93, stage:"r16", date:"2026-07-06", time:"3:00 PM ET", venue:"East Rutherford", feeds:[83, 84]},
-  {id:94, stage:"r16", date:"2026-07-06", time:"7:00 PM ET", venue:"Philadelphia",feeds:[81, 82]},
-  {id:95, stage:"r16", date:"2026-07-07", time:"3:00 PM ET", venue:"Miami",       feeds:[86, 88]},
-  {id:96, stage:"r16", date:"2026-07-07", time:"7:00 PM ET", venue:"Kansas City", feeds:[85, 87]},
+  // Round of 32 (June 28 - July 3) — dates, times, and venues from ESPN
+  {id:73, stage:"r32", date:"2026-06-28", time:"3:00 PM ET",  venue:"SoFi Stadium, Inglewood",                team1:"South Africa", team2:"Canada"},
+  {id:76, stage:"r32", date:"2026-06-29", time:"1:00 PM ET",  venue:"NRG Stadium, Houston",                   team1:"Brazil",       team2:"Japan"},
+  {id:74, stage:"r32", date:"2026-06-29", time:"4:30 PM ET",  venue:"Gillette Stadium, Foxborough",           team1:"Germany",      team2:"Paraguay"},
+  {id:75, stage:"r32", date:"2026-06-29", time:"9:00 PM ET",  venue:"Estadio BBVA, Monterrey",                team1:"Netherlands",  team2:"Morocco"},
+  {id:78, stage:"r32", date:"2026-06-30", time:"1:00 PM ET",  venue:"AT&T Stadium, Arlington",                team1:"Ivory Coast",  team2:"Norway"},
+  {id:77, stage:"r32", date:"2026-06-30", time:"5:00 PM ET",  venue:"MetLife Stadium, East Rutherford",       team1:"France",       team2:"Sweden"},
+  {id:79, stage:"r32", date:"2026-06-30", time:"9:00 PM ET",  venue:"Estadio Banorte, Guadalajara",           team1:"Mexico",       team2:"Ecuador"},
+  {id:80, stage:"r32", date:"2026-07-01", time:"12:00 PM ET", venue:"Mercedes-Benz Stadium, Atlanta",         team1:"England",      team2:"Congo DR"},
+  {id:82, stage:"r32", date:"2026-07-01", time:"4:00 PM ET",  venue:"Lumen Field, Seattle",                   team1:"Belgium",      team2:"Senegal"},
+  {id:81, stage:"r32", date:"2026-07-01", time:"8:00 PM ET",  venue:"Levi's Stadium, Santa Clara",            team1:"USA",          team2:"Bosnia"},
+  {id:84, stage:"r32", date:"2026-07-02", time:"3:00 PM ET",  venue:"SoFi Stadium, Inglewood",                team1:"Spain",        team2:"Austria"},
+  {id:83, stage:"r32", date:"2026-07-02", time:"7:00 PM ET",  venue:"BMO Field, Toronto",                     team1:"Portugal",     team2:"Croatia"},
+  {id:85, stage:"r32", date:"2026-07-02", time:"11:00 PM ET", venue:"BC Place, Vancouver",                    team1:"Switzerland",  team2:"Algeria"},
+  {id:88, stage:"r32", date:"2026-07-03", time:"2:00 PM ET",  venue:"AT&T Stadium, Arlington",                team1:"Australia",    team2:"Egypt"},
+  {id:86, stage:"r32", date:"2026-07-03", time:"6:00 PM ET",  venue:"Hard Rock Stadium, Miami",               team1:"Argentina",    team2:"Cabo Verde"},
+  {id:87, stage:"r32", date:"2026-07-03", time:"9:30 PM ET",  venue:"GEHA Field at Arrowhead, Kansas City",   team1:"Colombia",     team2:"Ghana"},
+  // Round of 16 (July 4 - 7) — feeders reference R32 winners
+  {id:89, stage:"r16", date:"2026-07-04", time:"1:00 PM ET", venue:"NRG Stadium, Houston",             feeds:[74, 77]},
+  {id:90, stage:"r16", date:"2026-07-04", time:"5:00 PM ET", venue:"Lincoln Financial Field, Philadelphia", feeds:[73, 75]},
+  {id:91, stage:"r16", date:"2026-07-05", time:"3:00 PM ET", venue:"AT&T Stadium, Arlington",          feeds:[76, 78]},
+  {id:92, stage:"r16", date:"2026-07-05", time:"7:00 PM ET", venue:"SoFi Stadium, Inglewood",          feeds:[79, 80]},
+  {id:93, stage:"r16", date:"2026-07-06", time:"3:00 PM ET", venue:"MetLife Stadium, East Rutherford", feeds:[83, 84]},
+  {id:94, stage:"r16", date:"2026-07-06", time:"7:00 PM ET", venue:"Mercedes-Benz Stadium, Atlanta",   feeds:[81, 82]},
+  {id:95, stage:"r16", date:"2026-07-07", time:"3:00 PM ET", venue:"Hard Rock Stadium, Miami",         feeds:[86, 88]},
+  {id:96, stage:"r16", date:"2026-07-07", time:"7:00 PM ET", venue:"GEHA Field at Arrowhead, Kansas City", feeds:[85, 87]},
   // Quarterfinals (July 9 - 11)
-  {id:97, stage:"qf", date:"2026-07-09", time:"3:00 PM ET", venue:"Boston",     feeds:[89, 90]},
-  {id:98, stage:"qf", date:"2026-07-10", time:"3:00 PM ET", venue:"Dallas",     feeds:[93, 94]},
-  {id:99, stage:"qf", date:"2026-07-10", time:"7:00 PM ET", venue:"Inglewood",  feeds:[91, 92]},
-  {id:100,stage:"qf", date:"2026-07-11", time:"3:00 PM ET", venue:"Atlanta",    feeds:[95, 96]},
+  {id:97, stage:"qf", date:"2026-07-09", time:"3:00 PM ET", venue:"NRG Stadium, Houston",            feeds:[89, 90]},
+  {id:98, stage:"qf", date:"2026-07-10", time:"3:00 PM ET", venue:"AT&T Stadium, Arlington",         feeds:[93, 94]},
+  {id:99, stage:"qf", date:"2026-07-10", time:"7:00 PM ET", venue:"SoFi Stadium, Inglewood",         feeds:[91, 92]},
+  {id:100,stage:"qf", date:"2026-07-11", time:"3:00 PM ET", venue:"Mercedes-Benz Stadium, Atlanta",  feeds:[95, 96]},
   // Semifinals (July 14 - 15)
-  {id:101,stage:"sf", date:"2026-07-14", time:"3:00 PM ET", venue:"Dallas",         feeds:[97, 98]},
-  {id:102,stage:"sf", date:"2026-07-15", time:"3:00 PM ET", venue:"Atlanta",        feeds:[99, 100]},
+  {id:101,stage:"sf", date:"2026-07-14", time:"3:00 PM ET", venue:"AT&T Stadium, Arlington",         feeds:[97, 98]},
+  {id:102,stage:"sf", date:"2026-07-15", time:"3:00 PM ET", venue:"Mercedes-Benz Stadium, Atlanta",  feeds:[99, 100]},
   // 3rd place — July 18
-  {id:103,stage:"third", date:"2026-07-18", time:"3:00 PM ET", venue:"Miami",       feeds:[101, 102], isThirdPlace:true},
+  {id:103,stage:"third", date:"2026-07-18", time:"3:00 PM ET", venue:"Hard Rock Stadium, Miami",     feeds:[101, 102], isThirdPlace:true},
   // Final — July 19
-  {id:104,stage:"final", date:"2026-07-19", time:"3:00 PM ET", venue:"East Rutherford", feeds:[101, 102]},
+  {id:104,stage:"final", date:"2026-07-19", time:"3:00 PM ET", venue:"MetLife Stadium, East Rutherford", feeds:[101, 102]},
 ];
 
 // Resolve which teams play in a given bracket match based on logged results
@@ -2440,12 +2440,24 @@ function getKnockoutLoser(matchId) {
 function bracketToScheduleEntry(m) {
   const { team1, team2 } = resolveBracketMatch(m);
   const stageLabel = { r32:"Round of 32", r16:"Round of 16", qf:"Quarterfinal", sf:"Semifinal", third:"Third Place Playoff", final:"World Cup Final" };
+  // Build a sortable HH:MM (24-hour) from a "H:MM AM/PM ET" string
+  function to24h(t) {
+    if (!t) return "00:00";
+    const match = t.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+    if (!match) return "00:00";
+    let h = parseInt(match[1], 10);
+    const min = match[2];
+    const mer = match[3].toUpperCase();
+    if (mer === 'PM' && h !== 12) h += 12;
+    if (mer === 'AM' && h === 12) h = 0;
+    return String(h).padStart(2, '0') + ':' + min;
+  }
   return {
     date: m.date, time: m.time,
     home: team1 || "TBD", away: team2 || "TBD",
     venue: m.venue, stage: m.stage,
     label: stageLabel[m.stage] + (m.id ? " · Match " + m.id : ""),
-    sortKey: m.date + " " + (m.time || "").replace(' PM ET','').replace(' AM ET',''),
+    sortKey: m.date + " " + to24h(m.time),
     bracketId: m.id,
     isThirdPlace: !!m.isThirdPlace
   };
@@ -3174,8 +3186,8 @@ const TROPHY_DEFS = {
   lastAsia:        { emoji: "🐉", name: "Last Asian Standing",   desc: "Owns the only Asian or Oceania team remaining after every other team from that region has been eliminated." },
 };
 
-const US_CITIES = ["inglewood","east rutherford","foxborough","houston","philadelphia","dallas","arlington","atlanta","kansas city","miami gardens","seattle"];
-const MX_CITIES = ["mexico city","zapopan","guadalupe","monterrey"];
+const US_CITIES = ["inglewood","east rutherford","foxborough","houston","philadelphia","dallas","arlington","atlanta","kansas city","miami gardens","miami","santa clara","seattle"];
+const MX_CITIES = ["mexico city","zapopan","guadalupe","guadalajara","monterrey"];
 const CA_CITIES = ["toronto","vancouver"];
 
 const CONTINENT_MAP = {
