@@ -1,4 +1,4 @@
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyldKl8FJ9aV9oj1S7tBZ-Xnz7G3BiQ3CGB_jRrN3GEzJtUSV6BYsPAjecCMTXCpcCw0Q/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwAc64C_9FGkHQwbgMXq_r9Y_r4o8bZEw1jRUQZ0g-0Hvf3f4b5W1XCZ6fCET25hbSulQ/exec";
 
 // Abort after 8 seconds — Google cold starts can hang indefinitely without this
 function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
