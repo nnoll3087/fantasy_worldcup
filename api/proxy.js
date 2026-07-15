@@ -31,7 +31,24 @@ export default async function handler(req, res) {
       return res.status(405).json({ ok: false, error: 'Method not allowed' });
     }
 
-    const data = await googleRes.json();
+    const text = await googleRes.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      // Apps Script returns an HTML error page on uncaught exceptions —
+      // surface its text so the real error reaches the client
+      const stripped = text
+        .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+        .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      return res.status(502).json({
+        ok: false,
+        error: 'Apps Script error: ' + (stripped.slice(0, 300) || `HTTP ${googleRes.status}`)
+      });
+    }
     return res.status(200).json(data);
 
   } catch (err) {
